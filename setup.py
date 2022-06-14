@@ -30,9 +30,9 @@ else:
 BIN_FOLDER=os.path.join(INSTALLATION_PATH,'bin')
 
 def main():
-	if float(sys.version[:3])<2.6 or float(sys.version[:3])>=2.8:
-		sys.stdout.write("CRITICAL: Python version must be 2.7!\n")
-		sys.exit(1)
+	# if float(sys.version[:3])<2.6 or float(sys.version[:3])>=2.8:
+	# 	sys.stdout.write("CRITICAL: Python version must be 2.7!\n")
+	# 	sys.exit(1)
 
 
 	version = re.search(
@@ -42,9 +42,9 @@ def main():
     	).group(1)
 
 
-	if float(sys.version[:3])<2.6 or float(sys.version[:3])>=2.8:
-    		sys.stdout.write("ERROR: Python version must be 2.6 or 2.7!\n")
-    		sys.exit(1)
+	# if float(sys.version[:3])<2.6 or float(sys.version[:3])>=2.8:
+    # 		sys.stdout.write("ERROR: Python version must be 2.6 or 2.7!\n")
+    # 		sys.exit(1)
 
 	setup(
 		  version=version,
