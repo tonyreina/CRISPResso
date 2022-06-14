@@ -1,2 +1,15 @@
-emboss
-
+name: crispresso-env
+channels:
+- bioconda
+- defaults
+- conda-forge
+dependencies:
+- pip
+- python
+- bowtie2 
+- samtools
+- htslib
+- ucsc-fatotwobit
+- emboss
+- pip:
+    - -r requirements.txt
