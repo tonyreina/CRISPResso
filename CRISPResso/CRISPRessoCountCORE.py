@@ -320,10 +320,10 @@ def main():
         info("Counting sgRNAs...")
         N_READS = 0
 
-        while infile.readline():
-            read_seq = infile.readline().strip()
-            infile.readline()
-            infile.readline()
+        while infile.readline().decode("UTF-8"):
+            read_seq = infile.readline().decode("UTF-8").strip()
+            infile.readline().decode("UTF-8")
+            infile.readline().decode("UTF-8")
 
             N_READS += 1
 

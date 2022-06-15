@@ -1803,25 +1803,26 @@ def main():
             needle_data = []
 
             try:
-                needle_infile = gzip.open(needle_filename)
+                needle_infile = gzip.open(needle_filename, mode="r")
 
-                line = needle_infile.readline()
+                line = needle_infile.readline().decode("UTF-8")
+
                 while line:
 
                     while line and ("# Aligned_sequences" not in line):
-                        line = needle_infile.readline()
+                        line = needle_infile.readline().decode("UTF-8")
 
                     if line:
                         # print line
-                        needle_infile.readline()  # skip another line
+                        needle_infile.readline().decode("UTF-8")  # skip another line
 
-                        line = needle_infile.readline()
+                        line = needle_infile.readline().decode("UTF-8")
                         id_seq = line.split()[-1].replace("_", ":")
 
                         for _ in range(5):
-                            needle_infile.readline()
+                            needle_infile.readline().decode("UTF-8")
 
-                        line = needle_infile.readline()
+                        line = needle_infile.readline().decode("UTF-8")
 
                         identity_seq = eval(
                             line.strip()
@@ -1835,15 +1836,20 @@ def main():
                             needle_data.append([id_seq, identity_seq])
                         else:
                             for _ in range(7):
-                                needle_infile.readline()
+                                needle_infile.readline().decode("UTF-8")
 
-                            line = needle_infile.readline()
+                            line = needle_infile.readline().decode("UTF-8")
                             aln_ref_seq = line.split()[2]
 
-                            aln_str = needle_infile.readline()[21:].rstrip("\n")
-                            line = needle_infile.readline()
+                            aln_str = (
+                                needle_infile.readline()
+                                .decode("UTF-8")[21:]
+                                .rstrip("\n")
+                            )
+                            line = needle_infile.readline().decode("UTF-8")
                             aln_query_seq = line.split()[2]
                             aln_query_len = line.split()[3]
+
                             needle_data.append(
                                 [
                                     id_seq,
@@ -1893,6 +1899,7 @@ def main():
                 needle_output_filename,
             )
         )
+        print(cmd)
 
         NEEDLE_OUTPUT = sb.call(cmd, shell=True)
         if NEEDLE_OUTPUT:

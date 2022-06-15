@@ -1325,18 +1325,26 @@ def main():
 
         def parse_quantification(quantification_file):
             with open(quantification_file) as infile:
-                infile.readline()
+                infile.readline().decode("UTF-8")
                 N_UNMODIFIED = float(
-                    re.findall("Unmodified:(\d+)", infile.readline())[0]
+                    re.findall("Unmodified:(\d+)", infile.readline().decode("UTF-8"))[0]
                 )
-                N_MODIFIED = float(re.findall("NHEJ:(\d+)", infile.readline())[0])
-                N_REPAIRED = float(re.findall("HDR:(\d+)", infile.readline())[0])
+                N_MODIFIED = float(
+                    re.findall("NHEJ:(\d+)", infile.readline().decode("UTF-8"))[0]
+                )
+                N_REPAIRED = float(
+                    re.findall("HDR:(\d+)", infile.readline().decode("UTF-8"))[0]
+                )
                 N_MIXED_HDR_NHEJ = float(
-                    re.findall("Mixed HDR-NHEJ:(\d+)", infile.readline())[0]
+                    re.findall(
+                        "Mixed HDR-NHEJ:(\d+)", infile.readline().decode("UTF-8")
+                    )[0]
                 )
-                infile.readline()
+                infile.readline().decode("UTF-8")
                 N_TOTAL = float(
-                    re.findall("Total Aligned:(\d+) reads", infile.readline())[0]
+                    re.findall(
+                        "Total Aligned:(\d+) reads", infile.readline().decode("UTF-8")
+                    )[0]
                 )
                 return N_UNMODIFIED, N_MODIFIED, N_REPAIRED, N_MIXED_HDR_NHEJ, N_TOTAL
 
