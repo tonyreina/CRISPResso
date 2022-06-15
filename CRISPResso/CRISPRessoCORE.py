@@ -6,7 +6,7 @@ CRISPResso - Luca Pinello 2015
 Software pipeline for the analysis of CRISPR-Cas9 genome editing outcomes from deep sequencing data
 https://github.com/lucapinello/CRISPResso
 """
-
+# CRISPResso -r1 base_editor.fastq -a GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG -g GAGTCCGAGCAGAAGAAGAA
 
 __version__ = "1.1.0"
 
@@ -25,6 +25,8 @@ import traceback
 
 
 import logging
+
+from pyparsing import lineStart
 
 logging.basicConfig(
     level=logging.INFO,
@@ -182,7 +184,7 @@ def filter_pe_fastq_by_qual(
 
     # we cannot use with on gzip with python 2.6 :(
     try:
-        fastq_filtered_outfile_r1 = gzip.open(output_filename_r1, "w+")
+        fastq_filtered_outfile_r1 = gzip.open(output_filename_r1, "wt")
 
         for record in SeqIO.parse(fastq_handle_r1, "fastq"):
             if not record.id in ids_to_remove:
@@ -191,7 +193,7 @@ def filter_pe_fastq_by_qual(
         raise Exception("Error handling the fastq_filtered_outfile_r1")
 
     try:
-        fastq_filtered_outfile_r2 = gzip.open(output_filename_r2, "w+")
+        fastq_filtered_outfile_r2 = gzip.open(output_filename_r2, "wt")
 
         for record in SeqIO.parse(fastq_handle_r2, "fastq"):
             if not record.id in ids_to_remove:
@@ -218,7 +220,7 @@ def filter_se_fastq_by_qual(
         )
 
     try:
-        fastq_filtered_outfile = gzip.open(output_filename, "w+")
+        fastq_filtered_outfile = gzip.open(output_filename, "wt")
 
         for record in SeqIO.parse(fastq_handle, "fastq"):
             if (
@@ -444,13 +446,13 @@ def process_df_chunk(df_needle_alignment_chunk):
             if (row.score_diff < 0) & (
                 row.score_repaired >= args.hdr_perfect_alignment_threshold
             ):
-                df_needle_alignment_chunk.ix[idx_row, "HDR"] = True
+                df_needle_alignment_chunk.loc[idx_row, "HDR"] = True
 
             # MIXED
             elif (row.score_diff < 0) & (
                 row.score_repaired < args.hdr_perfect_alignment_threshold
             ):
-                df_needle_alignment_chunk.ix[idx_row, "MIXED"] = True
+                df_needle_alignment_chunk.loc[idx_row, "MIXED"] = True
 
             else:
                 # NHEJ
@@ -459,11 +461,11 @@ def process_df_chunk(df_needle_alignment_chunk):
                     or include_idxs.intersection(insertion_positions_flat)
                     or include_idxs.intersection(deletion_positions_flat)
                 ):
-                    df_needle_alignment_chunk.ix[idx_row, "NHEJ"] = True
+                    df_needle_alignment_chunk.loc[idx_row, "NHEJ"] = True
 
                 # UNMODIFIED
                 else:
-                    df_needle_alignment_chunk.ix[idx_row, "UNMODIFIED"] = True
+                    df_needle_alignment_chunk.loc[idx_row, "UNMODIFIED"] = True
 
         # NO DONOR SEQUENCE PROVIDED
         else:
@@ -473,25 +475,25 @@ def process_df_chunk(df_needle_alignment_chunk):
                 or include_idxs.intersection(insertion_positions_flat)
                 or include_idxs.intersection(deletion_positions_flat)
             ):
-                df_needle_alignment_chunk.ix[idx_row, "NHEJ"] = True
+                df_needle_alignment_chunk.loc[idx_row, "NHEJ"] = True
 
             # UNMODIFIED
             else:
-                df_needle_alignment_chunk.ix[idx_row, "UNMODIFIED"] = True
+                df_needle_alignment_chunk.loc[idx_row, "UNMODIFIED"] = True
 
         ###CREATE AVERAGE SIGNALS, HERE WE SHOW EVERYTHING...
-        if df_needle_alignment_chunk.ix[idx_row, "MIXED"]:
+        if df_needle_alignment_chunk.loc[idx_row, "MIXED"]:
             effect_vector_mutation_mixed[substitution_positions] += 1
             effect_vector_deletion_mixed[deletion_positions_flat] += 1
             effect_vector_insertion_mixed[insertion_positions_flat] += 1
 
-        elif df_needle_alignment_chunk.ix[idx_row, "HDR"]:
+        elif df_needle_alignment_chunk.loc[idx_row, "HDR"]:
             effect_vector_mutation_hdr[substitution_positions] += 1
             effect_vector_deletion_hdr[deletion_positions_flat] += 1
             effect_vector_insertion_hdr[insertion_positions_flat] += 1
 
         elif (
-            df_needle_alignment_chunk.ix[idx_row, "NHEJ"]
+            df_needle_alignment_chunk.loc[idx_row, "NHEJ"]
             and not args.hide_mutations_outside_window_NHEJ
         ):
             effect_vector_mutation[substitution_positions] += 1
@@ -511,7 +513,7 @@ def process_df_chunk(df_needle_alignment_chunk):
 
         # For NHEJ we count only the events that overlap the window specified around
         # the cut site (1bp by default)...
-        if df_needle_alignment_chunk.ix[idx_row, "NHEJ"] and args.window_around_sgrna:
+        if df_needle_alignment_chunk.loc[idx_row, "NHEJ"] and args.window_around_sgrna:
 
             substitution_positions = list(
                 include_idxs.intersection(substitution_positions)
@@ -544,7 +546,7 @@ def process_df_chunk(df_needle_alignment_chunk):
                 deletion_positions_flat = np.hstack(deletion_positions)
 
         if (
-            df_needle_alignment_chunk.ix[idx_row, "NHEJ"]
+            df_needle_alignment_chunk.loc[idx_row, "NHEJ"]
             and args.hide_mutations_outside_window_NHEJ
         ):
             effect_vector_mutation[substitution_positions] += 1
@@ -552,15 +554,15 @@ def process_df_chunk(df_needle_alignment_chunk):
             effect_vector_insertion[insertion_positions_flat] += 1
 
         ####QUANTIFICATION AND FRAMESHIFT ANALYSIS
-        if not df_needle_alignment_chunk.ix[idx_row, "UNMODIFIED"]:
+        if not df_needle_alignment_chunk.loc[idx_row, "UNMODIFIED"]:
 
-            df_needle_alignment_chunk.ix[idx_row, "n_mutated"] = len(
+            df_needle_alignment_chunk.loc[idx_row, "n_mutated"] = len(
                 substitution_positions
             )
-            df_needle_alignment_chunk.ix[idx_row, "n_inserted"] = np.sum(
+            df_needle_alignment_chunk.loc[idx_row, "n_inserted"] = np.sum(
                 insertion_sizes
             )
-            df_needle_alignment_chunk.ix[idx_row, "n_deleted"] = np.sum(deletion_sizes)
+            df_needle_alignment_chunk.loc[idx_row, "n_deleted"] = np.sum(deletion_sizes)
 
             for idx_ins, ins_pos_set in enumerate(insertion_positions):
                 avg_vector_ins_all[ins_pos_set] += insertion_sizes[idx_ins]
@@ -681,8 +683,8 @@ def split_paired_end_reads_single_file(
 
     # we cannot use with on gzip with python 2.6 :(
     try:
-        fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, "w+")
-        fastq_splitted_outfile_r2 = gzip.open(output_filename_r2, "w+")
+        fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, "wt")
+        fastq_splitted_outfile_r2 = gzip.open(output_filename_r2, "wt")
         [
             fastq_splitted_outfile_r1.write(line)
             if (i % 8 < 4)
@@ -903,7 +905,7 @@ def plot_alleles_table(
     MAX_N_ROWS=100,
 ):
     # bp we are plotting on each side
-    offset_around_cut_to_plot = len(df_alleles.index[0]) / 2
+    offset_around_cut_to_plot = len(df_alleles.index[0]) // 2
 
     # make a color map of fixed colors
     alpha = 0.5
@@ -932,17 +934,25 @@ def plot_alleles_table(
 
     per_element_annot_kws = []
     idx_row = 0
-    for idx, row in df_alleles.ix[df_alleles["%Reads"] >= MIN_FREQUENCY][
+
+    for idx, row in df_alleles.loc[df_alleles["%Reads"] >= MIN_FREQUENCY][
         :MAX_N_ROWS
     ].iterrows():
         X.append(seq_to_numbers(str.upper(idx)))
         annot.append(list(idx))
         y_labels.append("%.2f%% (%d reads)" % (row["%Reads"], row["#Reads"]))
 
+        print(row["Reference_Sequence"])
+        print(re_find_indels)
         for p in re_find_indels.finditer(row["Reference_Sequence"]):
             lines[idx_row].append((p.start(), p.end()))
+            print("Yes 1")
+            print(p)
+            print("Yes 2")
 
         idx_row += 1
+
+        print(lines)
 
         idxs_sub = [
             i_sub
@@ -955,6 +965,7 @@ def plot_alleles_table(
         to_append[idxs_sub] = {"weight": "bold", "color": "black", "size": 16}
         per_element_annot_kws.append(to_append)
 
+    print("234b")
     ref_seq_around_cut = reference_seq[
         cut_point
         - offset_around_cut_to_plot
@@ -966,14 +977,9 @@ def plot_alleles_table(
     per_element_annot_kws = np.vstack(per_element_annot_kws[::-1])
     ref_seq_hm = np.expand_dims(seq_to_numbers(ref_seq_around_cut), 1).T
     ref_seq_annot_hm = np.expand_dims(list(ref_seq_around_cut), 1).T
-
-    NEW_SEABORN = (
-        np.sum(np.array(map(int, sns.__version__.split("."))) * (100, 10, 1)) >= 80
-    )
-
-    if NEW_SEABORN:
-        annot = annot[::-1]
-        X = X[::-1]
+    
+    annot = annot[::-1]
+    X = X[::-1]
 
     sns.set_context("poster")
 
@@ -1021,6 +1027,7 @@ def plot_alleles_table(
     ax_hm.vlines([offset_around_cut_to_plot], *ax_hm.get_ylim(), linestyles="dashed")
 
     # create boxes for ins
+    print(lines)
     for idx, lss in lines.iteritems():
         for ls in lss:
             for l in ls:
@@ -1594,7 +1601,7 @@ def main():
         finally:
             logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
-            with open(log_filename, "w+") as outfile:
+            with open(log_filename, "wt") as outfile:
                 outfile.write(
                     "[Command used]:\nCRISPResso %s\n\n[Execution log]:\n"
                     % " ".join(sys.argv)
@@ -1784,7 +1791,7 @@ def main():
 
         # write .fa file only for amplicon the rest we pipe trough awk on the fly!
 
-        with open(database_fasta_filename, "w+") as outfile:
+        with open(database_fasta_filename, "wt") as outfile:
             outfile.write(">%s\n%s\n" % (database_id, args.amplicon_seq))
 
         if args.expected_hdr_amplicon_seq:
@@ -1793,7 +1800,7 @@ def main():
                 "needle_output_repair_%s.txt.gz" % database_id
             )
 
-            with open(database_repair_fasta_filename, "w+") as outfile:
+            with open(database_repair_fasta_filename, "wt") as outfile:
                 outfile.write(
                     ">%s\n%s\n" % (database_id, args.expected_hdr_amplicon_seq)
                 )
@@ -1899,7 +1906,6 @@ def main():
                 needle_output_filename,
             )
         )
-        print(cmd)
 
         NEEDLE_OUTPUT = sb.call(cmd, shell=True)
         if NEEDLE_OUTPUT:
@@ -1951,13 +1957,13 @@ def main():
             N_TOTAL_ALSO_UNALIGNED = df_database_and_repair.shape[0] * 1.0
 
             # find reads that failed to align and try on the reverse complement
-            sr_not_aligned = df_database_and_repair.ix[
+            sr_not_aligned = df_database_and_repair.loc[
                 (df_database_and_repair.score_ref < args.min_identity_score)
                 & (df_database_and_repair.score_ref < args.min_identity_score)
             ].align_seq.apply(lambda x: x.replace("_", ""))
 
             # filter out not aligned reads
-            df_database_and_repair = df_database_and_repair.ix[
+            df_database_and_repair = df_database_and_repair.loc[
                 (df_database_and_repair.score_ref > args.min_identity_score)
                 | (df_database_and_repair.score_repaired > args.min_identity_score)
             ]
@@ -1972,24 +1978,27 @@ def main():
 
         else:
             df_needle_alignment = parse_needle_output(needle_output_filename, "ref")
+            
             N_TOTAL_ALSO_UNALIGNED = df_needle_alignment.shape[0] * 1.0
 
-            sr_not_aligned = df_needle_alignment.ix[
+            sr_not_aligned = df_needle_alignment.loc[
                 (df_needle_alignment.score_ref < args.min_identity_score)
             ].align_seq.apply(lambda x: x.replace("_", ""))
             # filter out not aligned reads
-            df_needle_alignment = df_needle_alignment.ix[
+            df_needle_alignment = df_needle_alignment.loc[
                 df_needle_alignment.score_ref > args.min_identity_score
             ]
 
         # check if the not aligned reads are in the reverse complement
         if sr_not_aligned.count():
+
             # write fastq_not_aligned
             fasta_not_aligned_filename = _jp("not_aligned_amplicon_forward.fa.gz")
 
-            outfile = gzip.open(fasta_not_aligned_filename, "w+")
-            for x in sr_not_aligned.iteritems():
-                outfile.write(">%s\n%s\n" % (x[0], x[1]))
+            outfile = gzip.open(fasta_not_aligned_filename, "wt")
+
+            for x0, x1 in sr_not_aligned.iteritems():
+                outfile.write(">%s\n%s\n" % (x0, x1))
 
             # write reverse complement of ampl and expected amplicon
             database_rc_fasta_filename = _jp("%s_database_rc.fa" % database_id)
@@ -1997,7 +2006,7 @@ def main():
 
             info("Align sequences to reverse complement of the amplicon...")
 
-            with open(database_rc_fasta_filename, "w+") as outfile:
+            with open(database_rc_fasta_filename, "wt") as outfile:
                 outfile.write(
                     ">%s\n%s\n" % (database_id, reverse_complement(args.amplicon_seq))
                 )
@@ -2010,7 +2019,7 @@ def main():
                     "needle_output_repair_rc_%s.txt.gz" % database_id
                 )
 
-                with open(database_repair_rc_fasta_filename, "w+") as outfile:
+                with open(database_repair_rc_fasta_filename, "wt") as outfile:
                     outfile.write(
                         ">%s\n%s\n"
                         % (
@@ -2059,9 +2068,13 @@ def main():
             # merge the flow rev
             if args.expected_hdr_amplicon_seq:
                 df_database_rc = parse_needle_output(needle_output_rc_filename, "ref")
+                print("df_database_rc")
+                print(df_database_rc)
                 df_database_repair_rc = parse_needle_output(
                     needle_output_repair_rc_filename, "repaired", just_score=True
                 )
+                print("df_database_repair_rc")
+                print(df_database_repair_rc)
 
                 df_database_and_repair_rc = df_database_rc.join(df_database_repair_rc)
 
@@ -2070,7 +2083,7 @@ def main():
 
                 # filter bad alignments also to rc
 
-                df_database_and_repair_rc = df_database_and_repair_rc.ix[
+                df_database_and_repair_rc = df_database_and_repair_rc.loc[
                     (df_database_and_repair_rc.score_ref > args.min_identity_score)
                     | (
                         df_database_and_repair_rc.score_repaired
@@ -2093,7 +2106,7 @@ def main():
                 )
 
                 # filter out not aligned reads
-                df_needle_alignment_rc = df_needle_alignment_rc.ix[
+                df_needle_alignment_rc = df_needle_alignment_rc.loc[
                     df_needle_alignment_rc.score_ref > args.min_identity_score
                 ]
 
@@ -2114,7 +2127,7 @@ def main():
             )
 
             # append the RC reads to the aligned reads in the original orientation
-            df_needle_alignment = df_needle_alignment.append(df_needle_alignment_rc)
+            df_needle_alignment = pd.concat([df_needle_alignment, df_needle_alignment_rc])
 
             del df_needle_alignment_rc
 
@@ -2396,14 +2409,17 @@ def main():
         info("Calculating alleles frequencies...")
 
         def get_ref_positions(row, df_alignment):
-            # return list(df_alignment.ix[(row.Aligned_Sequence ,row.Reference_Sequence),'ref_positions'][0])
-            return list(
+            # return list(df_alignment.loc[(row.Aligned_Sequence ,row.Reference_Sequence),'ref_positions'][0])
+
+            ref_positions = list(
                 df_alignment.loc[[(row.Aligned_Sequence, row.Reference_Sequence)]]
                 .iloc[
                     0,
                 ]
                 .loc["ref_positions"]
             )
+
+            return ref_positions
 
         df_alleles = df_needle_alignment.groupby(
             [
@@ -2429,10 +2445,7 @@ def main():
         # df_alleles.set_index('Aligned_Sequence',inplace=True)
         df_alleles["%Reads"] = df_alleles["#Reads"] / df_alleles["#Reads"].sum() * 100
 
-        if np.sum(np.array(map(int, pd.__version__.split("."))) * (100, 10, 1)) < 170:
-            df_alleles.sort("#Reads", ascending=False, inplace=True)
-        else:
-            df_alleles.sort_values(by="#Reads", ascending=False, inplace=True)
+        df_alleles.sort_values(by="#Reads", ascending=False, inplace=True)
 
         # add ref positions for the plot around the cut sites
         df_needle_alignment.set_index(["align_seq", "ref_seq"], inplace=True)
@@ -2700,7 +2713,7 @@ def main():
         # (3) a graph of frequency of deletions and insertions of various sizes (deletions could be consider as negative numbers and insertions as positive);
 
         def calculate_range(df, column_name):
-            df_not_zero = df.ix[df[column_name] > 0, column_name]
+            df_not_zero = df.loc[df[column_name] > 0, column_name]
             try:
                 r = max(15, int(np.round(np.percentile(df_not_zero, 99))))
             except:
@@ -3251,20 +3264,26 @@ def main():
                     pad=1,
                 )
 
+        
         # Position dependent indels plot
         fig = plt.figure(figsize=(24, 10))
         ax1 = fig.add_subplot(1, 2, 1)
+        
         markerline, stemlines, baseline = ax1.stem(
-            avg_vector_ins_all, "r", lw=3, markerfmt="s", markerline=None, s=50
+            avg_vector_ins_all, markerfmt="s"
         )
+ 
         plt.setp(markerline, "markerfacecolor", "r", "markersize", 8)
         plt.setp(baseline, "linewidth", 0)
         plt.setp(stemlines, "color", "r", "linewidth", 3)
+
         # plt.hold(True)
         y_max = max(avg_vector_ins_all) * 1.2
+        
         if cut_points:
 
             for idx, cut_point in enumerate(cut_points):
+
                 if idx == 0:
                     ax1.plot(
                         [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
@@ -3296,7 +3315,7 @@ def main():
 
         ax2 = fig.add_subplot(1, 2, 2)
         markerline, stemlines, baseline = ax2.stem(
-            avg_vector_del_all, "r", lw=3, markerfmt="s", markerline=None, s=50
+            avg_vector_del_all, markerfmt="s"
         )
         plt.setp(markerline, "markerfacecolor", "m", "markersize", 8)
         plt.setp(baseline, "linewidth", 0)
@@ -3336,7 +3355,7 @@ def main():
         ax2.set_title("Position dependent deletion size")
 
         plt.tight_layout()
-
+            
         plt.savefig(
             _jp("4e.Position_dependent_average_indel_size.pdf"),
             bbox_extra_artists=(lgd,),
@@ -3348,7 +3367,7 @@ def main():
                 bbox_extra_artists=(lgd,),
                 bbox_inches="tight",
             )
-
+            
         if PERFORM_FRAMESHIFT_ANALYSIS:
             # make frameshift plots
             fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
@@ -3372,7 +3391,7 @@ def main():
                 ],
                 autopct="%1.1f%%",
             )
-
+            
             ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
             ax2.plot([0, len_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence")
             # plt.hold(True)
@@ -3631,10 +3650,8 @@ def main():
                 )
 
         ##new plots alleles around cut_sites
-
         for sgRNA, cut_point in zip(sgRNA_sequences, cut_points):
             # print sgRNA,cut_point
-
             df_allele_around_cut = get_dataframe_around_cut(
                 df_alleles, cut_point, args.offset_around_cut_to_plot
             )
@@ -3738,52 +3755,52 @@ def main():
             )
 
         nhej_inserted = np.sum(
-            df_needle_alignment.ix[df_needle_alignment.NHEJ, "n_inserted"] > 0
+            df_needle_alignment.loc[df_needle_alignment.NHEJ, "n_inserted"] > 0
         )
         if np.isnan(nhej_inserted):
             nhej_inserted = 0
             nhej_deleted = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.NHEJ, "n_deleted"] > 0
+                df_needle_alignment.loc[df_needle_alignment.NHEJ, "n_deleted"] > 0
             )
         if np.isnan(nhej_deleted):
             nhej_deleted = 0
             nhej_mutated = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.NHEJ, "n_mutated"] > 0
+                df_needle_alignment.loc[df_needle_alignment.NHEJ, "n_mutated"] > 0
             )
         if np.isnan(nhej_mutated):
             nhej_mutated = 0
             hdr_inserted = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.HDR, "n_inserted"] > 0
+                df_needle_alignment.loc[df_needle_alignment.HDR, "n_inserted"] > 0
             )
         if np.isnan(hdr_inserted):
             hdr_inserted = 0
             hdr_deleted = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.HDR, "n_deleted"] > 0
+                df_needle_alignment.loc[df_needle_alignment.HDR, "n_deleted"] > 0
             )
         if np.isnan(hdr_deleted):
             hdr_deleted = 0
             hdr_mutated = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.HDR, "n_mutated"] > 0
+                df_needle_alignment.loc[df_needle_alignment.HDR, "n_mutated"] > 0
             )
         if np.isnan(hdr_mutated):
             hdr_mutated = 0
             mixed_inserted = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.MIXED, "n_inserted"] > 0
+                df_needle_alignment.loc[df_needle_alignment.MIXED, "n_inserted"] > 0
             )
         if np.isnan(mixed_inserted):
             mixed_inserted = 0
             mixed_deleted = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.MIXED, "n_deleted"] > 0
+                df_needle_alignment.loc[df_needle_alignment.MIXED, "n_deleted"] > 0
             )
         if np.isnan(mixed_deleted):
             mixed_deleted = 0
             mixed_mutated = np.sum(
-                df_needle_alignment.ix[df_needle_alignment.MIXED, "n_mutated"] > 0
+                df_needle_alignment.loc[df_needle_alignment.MIXED, "n_mutated"] > 0
             )
         if np.isnan(mixed_mutated):
             mixed_mutated = 0
 
-        with open(_jp("Quantification_of_editing_frequency.txt"), "w+") as outfile:
+        with open(_jp("Quantification_of_editing_frequency.txt"), "wt") as outfile:
             outfile.write(
                 (
                     "Quantification of editing frequency:\n\t- Unmodified:%d reads\n"
@@ -3805,19 +3822,19 @@ def main():
             )
 
         # write alleles table
-        df_alleles.ix[:, :"%Reads"].to_csv(
+        df_alleles.loc[:, :"%Reads"].to_csv(
             _jp("Alleles_frequency_table.txt"), sep="\t", header=True, index=None
         )
 
         # write statistics
-        with open(_jp("Mapping_statistics.txt"), "w+") as outfile:
+        with open(_jp("Mapping_statistics.txt"), "wt") as outfile:
             outfile.write(
                 "READS IN INPUTS:%d\nREADS AFTER PREPROCESSING:%d\nREADS ALIGNED:%d"
                 % (N_READS_INPUT, N_READS_AFTER_PREPROCESSING, N_TOTAL)
             )
 
         if PERFORM_FRAMESHIFT_ANALYSIS:
-            with open(_jp("Frameshift_analysis.txt"), "w+") as outfile:
+            with open(_jp("Frameshift_analysis.txt"), "wt") as outfile:
                 outfile.write(
                     "Frameshift analysis:\n\tNoncoding mutation:%d reads\n\tIn-frame mutation:%d reads\n\tFrameshift mutation:%d reads\n"
                     % (
@@ -3827,7 +3844,7 @@ def main():
                     )
                 )
 
-            with open(_jp("Splice_sites_analysis.txt"), "w+") as outfile:
+            with open(_jp("Splice_sites_analysis.txt"), "wt") as outfile:
                 outfile.write(
                     "Splice sites analysis:\n\tUnmodified:%d reads\n\tPotential splice sites modified:%d reads\n"
                     % (
