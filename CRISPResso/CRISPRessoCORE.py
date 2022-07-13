@@ -931,10 +931,13 @@ def plot_alleles_table(
     lines = defaultdict(list)
 
     re_find_indels = re.compile("(-*-)")
-
+    
     per_element_annot_kws = []
     idx_row = 0
 
+    print(df_alleles.loc[df_alleles["%Reads"] >= MIN_FREQUENCY][
+        :MAX_N_ROWS
+    ])
     for idx, row in df_alleles.loc[df_alleles["%Reads"] >= MIN_FREQUENCY][
         :MAX_N_ROWS
     ].iterrows():
@@ -950,6 +953,8 @@ def plot_alleles_table(
             print(p)
             print("Yes 2")
 
+        # FIXME
+        lines[idx_row].append(row["Reference_Sequence"])
         idx_row += 1
 
         print(lines)
@@ -1373,8 +1378,8 @@ def main():
                 args.name = clean_name
 
         # amplicon sequence check
-        # make evetything uppercase!
-        args.amplicon_seq = args.amplicon_seq.strip().upper()
+        # make everything uppercase!
+        args.amplicon_seq = args.amplicon_seq.upper().strip().rstrip("\n")
         wrong_nt = find_wrong_nt(args.amplicon_seq)
         if wrong_nt:
             raise NTException(
