@@ -54,9 +54,9 @@ def check_library(library_name):
 
 def slugify(value):  # adapted from the Django project
 
-    value = unicodedata.normalize("NFKD", unicode(value)).encode("ascii", "ignore")
-    value = unicode(re.sub("[^\w\s-]", "_", value).strip())
-    value = unicode(re.sub("[-\s]+", "-", value))
+    value = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore")
+    value = str(re.sub("[^\w\s-]", "_", value).strip())
+    value = str(re.sub("[-\s]+", "-", value))
 
     return str(value)
 

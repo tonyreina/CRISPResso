@@ -137,7 +137,7 @@ validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
 
 
 def clean_filename(filename):
-    cleanedFilename = unicodedata.normalize("NFKD", unicode(filename)).encode(
+    cleanedFilename = unicodedata.normalize("NFKD", str(filename)).encode(
         "ASCII", "ignore"
     )
     return "".join(c for c in cleanedFilename if c in validFilenameChars)
@@ -267,7 +267,7 @@ def main():
             open(os.path.join(_ROOT, "CRISPRessoCORE.py")).read(),
             re.M,
         ).group(1)
-        print("Version %s\n" % __version__)
+        print(("Version %s\n" % __version__))
 
         # tool specific optional
         parser = argparse.ArgumentParser(

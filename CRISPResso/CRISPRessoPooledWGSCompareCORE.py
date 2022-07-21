@@ -91,7 +91,7 @@ def main():
             open(os.path.join(_ROOT, "CRISPRessoCORE.py")).read(),
             re.M,
         ).group(1)
-        print("Version %s\n" % __version__)
+        print(("Version %s\n" % __version__))
 
         parser = argparse.ArgumentParser(
             description="CRISPRessoPooledWGSCompare Parameters",

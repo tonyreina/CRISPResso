@@ -19,7 +19,7 @@ import sys
 import platform
 import shutil
 from os.path import expanduser
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 # TO INSTALL CRISPRESSO DEPENDECIENS IN A CUSTOM LOCATION SET THE ENV VARIABLE: CRISPRESSO_DEPENDENCIES_FOLDER
 if os.environ.get("CRISPRESSO_DEPENDENCIES_FOLDER"):
@@ -155,7 +155,7 @@ def check_needle():
         sys.stdout.write("\nTrying to download and install it, please be patient!")
         os.chdir("dependencies/")
         sys.stdout.write("\nDownloading EMBOSS source please be patient...")
-        urllib.urlretrieve(
+        urllib.request.urlretrieve(
             "ftp://emboss.open-bio.org/pub/EMBOSS/old/6.5.0/EMBOSS-6.5.7.tar.gz",
             "EMBOSS-6.5.7.tar.gz",
         )

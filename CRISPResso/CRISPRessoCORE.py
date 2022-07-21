@@ -658,16 +658,16 @@ def process_df_chunk(df_needle_alignment_chunk):
 
 
 def add_hist(hist_to_add, hist_global):
-    for key, value in hist_to_add.iteritems():
+    for key, value in hist_to_add.items():
         hist_global[key] += value
     return hist_global
 
 
 def slugify(value):  # adapted from the Django project
 
-    value = unicodedata.normalize("NFKD", unicode(value)).encode("ascii", "ignore")
-    value = unicode(re.sub("[^\w\s-]", "_", value).strip())
-    value = unicode(re.sub("[-\s]+", "-", value))
+    value = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore")
+    value = str(re.sub("[^\w\s-]", "_", value).strip())
+    value = str(re.sub("[-\s]+", "-", value))
 
     return str(value)
 
@@ -942,7 +942,7 @@ def plot_alleles_table(
         annot.append(list(idx))
         y_labels.append("%.2f%% (%d reads)" % (row["%Reads"], row["#Reads"]))
 
-        print(row["Reference_Sequence"])
+        print((row["Reference_Sequence"]))
         print(re_find_indels)
         for p in re_find_indels.finditer(row["Reference_Sequence"]):
             lines[idx_row].append((p.start(), p.end()))
@@ -1028,7 +1028,7 @@ def plot_alleles_table(
 
     # create boxes for ins
     print(lines)
-    for idx, lss in lines.iteritems():
+    for idx, lss in lines.items():
         for ls in lss:
             for l in ls:
                 ax_hm.vlines([l], N_ROWS - idx - 1, N_ROWS - idx, color="red", lw=3)
@@ -1133,11 +1133,11 @@ def main():
                     \___/
              """
         )
-        print(
+        print((
             "\n[Luca Pinello 2015, send bugs, suggestions or *green coffee* to lucapinello AT gmail DOT com]\n\n"
-        ),
+        ), end=' ')
 
-        print("Version %s\n" % __version__)
+        print(("Version %s\n" % __version__))
 
         def print_stacktrace_if_debug():
             debug_flag = False
@@ -1997,7 +1997,7 @@ def main():
 
             outfile = gzip.open(fasta_not_aligned_filename, "wt")
 
-            for x0, x1 in sr_not_aligned.iteritems():
+            for x0, x1 in sr_not_aligned.items():
                 outfile.write(">%s\n%s\n" % (x0, x1))
 
             # write reverse complement of ampl and expected amplicon
@@ -2122,9 +2122,7 @@ def main():
             ].apply(lambda x: x[::-1])
 
             # fix for duplicates when rc alignment
-            df_needle_alignment_rc.index = map(
-                lambda x: "_".join([x, "RC"]), df_needle_alignment_rc.index
-            )
+            df_needle_alignment_rc.index = ["_".join([x, "RC"]) for x in df_needle_alignment_rc.index]
 
             # append the RC reads to the aligned reads in the original orientation
             df_needle_alignment = pd.concat([df_needle_alignment, df_needle_alignment_rc])
@@ -2240,17 +2238,17 @@ def main():
             for cut_p in cut_points:
                 st = max(0, cut_p - half_window + 1)
                 en = min(len(args.amplicon_seq) - 1, cut_p + half_window + 1)
-                include_idxs.append(range(st, en))
+                include_idxs.append(list(range(st, en)))
         else:
-            include_idxs = range(len(args.amplicon_seq))
+            include_idxs = list(range(len(args.amplicon_seq)))
 
         exclude_idxs = []
 
         if args.exclude_bp_from_left:
-            exclude_idxs += range(args.exclude_bp_from_left)
+            exclude_idxs += list(range(args.exclude_bp_from_left))
 
         if args.exclude_bp_from_right:
-            exclude_idxs += range(len_amplicon)[-args.exclude_bp_from_right :]
+            exclude_idxs += list(range(len_amplicon))[-args.exclude_bp_from_right :]
 
         # flatten the arrays to avoid errors with old numpy library
         include_idxs = np.ravel(include_idxs)
@@ -2725,13 +2723,13 @@ def main():
         range_del = calculate_range(df_needle_alignment, "n_deleted")
 
         y_values_mut, x_bins_mut = plt.histogram(
-            df_needle_alignment["n_mutated"], bins=range(0, range_mut)
+            df_needle_alignment["n_mutated"], bins=list(range(0, range_mut))
         )
         y_values_ins, x_bins_ins = plt.histogram(
-            df_needle_alignment["n_inserted"], bins=range(0, range_ins)
+            df_needle_alignment["n_inserted"], bins=list(range(0, range_ins))
         )
         y_values_del, x_bins_del = plt.histogram(
-            df_needle_alignment["n_deleted"], bins=range(0, range_del)
+            df_needle_alignment["n_deleted"], bins=list(range(0, range_del))
         )
 
         fig = plt.figure(figsize=(26, 6.5))
@@ -3456,7 +3454,7 @@ def main():
             # profiles-----------------------------------------------------------------------------------
             fig = plt.figure(figsize=(22, 10))
             ax1 = fig.add_subplot(2, 1, 1)
-            x, y = map(np.array, zip(*[a for a in hist_frameshift.iteritems()]))
+            x, y = list(map(np.array, list(zip(*[a for a in hist_frameshift.items()]))))
             y = y / float(sum(hist_frameshift.values())) * 100
             ax1.bar(x - 0.5, y)
             ax1.set_xlim(-30.5, 30.5)
@@ -3482,7 +3480,7 @@ def main():
             plt.ylabel("%")
 
             ax2 = fig.add_subplot(2, 1, 2)
-            x, y = map(np.array, zip(*[a for a in hist_inframe.iteritems()]))
+            x, y = list(map(np.array, list(zip(*[a for a in hist_inframe.items()]))))
             y = y / float(sum(hist_inframe.values())) * 100
             ax2.bar(x - 0.5, y, color=(0, 1, 1, 0.2))
             ax2.set_xlim(-30.5, 30.5)

@@ -92,9 +92,9 @@ def check_file(filename):
 
 def slugify(value):  # adapted from the Django project
 
-    value = unicodedata.normalize("NFKD", unicode(value)).encode("ascii", "ignore")
-    value = unicode(re.sub("[^\w\s-]", "_", value).strip())
-    value = unicode(re.sub("[-\s]+", "-", value))
+    value = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore")
+    value = str(re.sub("[^\w\s-]", "_", value).strip())
+    value = str(re.sub("[-\s]+", "-", value))
 
     return str(value)
 
@@ -203,7 +203,7 @@ validFilenameChars = "+-_.() %s%s" % (string.ascii_letters, string.digits)
 
 
 def clean_filename(filename):
-    cleanedFilename = unicodedata.normalize("NFKD", unicode(filename)).encode(
+    cleanedFilename = unicodedata.normalize("NFKD", str(filename)).encode(
         "ASCII", "ignore"
     )
     return "".join(c for c in cleanedFilename if c in validFilenameChars)
@@ -307,7 +307,7 @@ def main():
             open(os.path.join(_ROOT, "CRISPRessoCORE.py")).read(),
             re.M,
         ).group(1)
-        print("Version %s\n" % __version__)
+        print(("Version %s\n" % __version__))
 
         parser = argparse.ArgumentParser(
             description="CRISPRessoPooled Parameters",
@@ -1213,7 +1213,7 @@ def main():
                 )
 
             if (
-                np.sum(np.array(map(int, pd.__version__.split("."))) * (100, 10, 1))
+                np.sum(np.array(list(map(int, pd.__version__.split(".")))) * (100, 10, 1))
                 < 170
             ):
                 df_regions.sort("n_reads", ascending=False, inplace=True)
@@ -1238,13 +1238,13 @@ def main():
                     + [region, get_n_reads_fastq(region)]
                 )
 
-            print("C:", coordinates)
+            print(("C:", coordinates))
             df_regions = pd.DataFrame(
                 coordinates,
                 columns=["chr_id", "bpstart", "bpend", "fastq_file", "n_reads"],
             )
 
-            print("D:", df_regions)
+            print(("D:", df_regions))
             df_regions = df_regions.convert_objects(convert_numeric=True)
             df_regions.dropna(inplace=True)  # remove regions in chrUn
             df_regions.bpstart = df_regions.bpstart.astype(int)
@@ -1268,7 +1268,7 @@ def main():
                 )
 
             if (
-                np.sum(np.array(map(int, pd.__version__.split("."))) * (100, 10, 1))
+                np.sum(np.array(list(map(int, pd.__version__.split(".")))) * (100, 10, 1))
                 < 170
             ):
                 df_regions.sort("n_reads", ascending=False, inplace=True)
