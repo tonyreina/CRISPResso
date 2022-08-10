@@ -4,7 +4,8 @@ Setup script for CRISPResso -- Software pipeline for the analysis of CRISPR-Cas9
 @status:  beta
 @version: $Revision$
 @author:  Luca Pinello
-@contact: lpinello@jimmy.harvard.edu
+@updater:  Tony Reina
+@contact: tbreina@bu.edu
 """
 
 import os
@@ -45,7 +46,7 @@ def main():
 
     setup(
         version=version,
-        name="CRISPResso",
+        name="CRISPResso-1.1",
         include_package_data=True,
         packages=["CRISPResso"],
         package_dir={"CRISPResso": "CRISPResso"},
@@ -61,9 +62,9 @@ def main():
             ]
         },
         description="Software pipeline for the analysis of CRISPR-Cas9 genome editing outcomes from deep sequencing data",
-        author="Luca Pinello",
-        author_email="lpinello@jimmy.harvard.edu",
-        url="http://github.com/lucapinello/CRISPResso",
+        author="Luca Pinello / Tony Reina",
+        author_email="tbreina@bu.edu",
+        url="https://github.com/tonyreina/CRISPResso",
         classifiers=[
             "Development Status :: 4 - Beta",
             "Environment :: Console",
