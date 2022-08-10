@@ -283,12 +283,12 @@ def main():
                 ]
             )
             / N_TOTAL_1
-            * 100
+            * 100.
         )
         means_sample_2 = (
             np.array([N_UNMODIFIED_2, N_MODIFIED_2, N_REPAIRED_2, N_MIXED_HDR_NHEJ_2])
             / N_TOTAL_2
-            * 100
+            * 100.
         )
 
         ax1 = fig.add_subplot(1, 2, 1)
@@ -412,7 +412,7 @@ def main():
 
         plt.xticks(
             np.arange(
-                0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
             ).astype(int)
         )
         plt.xlabel("Reference amplicon position (bp)")
@@ -476,7 +476,7 @@ def main():
         )
         plt.xticks(
             np.arange(
-                0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
             ).astype(int)
         )
         plt.xlabel("Reference amplicon position (bp)")

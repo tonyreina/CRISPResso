@@ -658,7 +658,7 @@ def process_df_chunk(df_needle_alignment_chunk):
 
 
 def add_hist(hist_to_add, hist_global):
-    for key, value in hist_to_add.iteritems():
+    for key, value in hist_to_add.items():
         hist_global[key] += value
     return hist_global
 
@@ -935,9 +935,6 @@ def plot_alleles_table(
     per_element_annot_kws = []
     idx_row = 0
 
-    print(df_alleles.loc[df_alleles["%Reads"] >= MIN_FREQUENCY][
-        :MAX_N_ROWS
-    ])
     for idx, row in df_alleles.loc[df_alleles["%Reads"] >= MIN_FREQUENCY][
         :MAX_N_ROWS
     ].iterrows():
@@ -945,19 +942,12 @@ def plot_alleles_table(
         annot.append(list(idx))
         y_labels.append("%.2f%% (%d reads)" % (row["%Reads"], row["#Reads"]))
 
-        print(row["Reference_Sequence"])
-        print(re_find_indels)
         for p in re_find_indels.finditer(row["Reference_Sequence"]):
             lines[idx_row].append((p.start(), p.end()))
-            print("Yes 1")
-            print(p)
-            print("Yes 2")
 
         # FIXME
         lines[idx_row].append(row["Reference_Sequence"])
         idx_row += 1
-
-        print(lines)
 
         idxs_sub = [
             i_sub
@@ -970,7 +960,6 @@ def plot_alleles_table(
         to_append[idxs_sub] = {"weight": "bold", "color": "black", "size": 16}
         per_element_annot_kws.append(to_append)
 
-    print("234b")
     ref_seq_around_cut = reference_seq[
         cut_point
         - offset_around_cut_to_plot
@@ -1032,8 +1021,7 @@ def plot_alleles_table(
     ax_hm.vlines([offset_around_cut_to_plot], *ax_hm.get_ylim(), linestyles="dashed")
 
     # create boxes for ins
-    print(lines)
-    for idx, lss in lines.iteritems():
+    for idx, lss in lines.items():
         for ls in lss:
             for l in ls:
                 ax_hm.vlines([l], N_ROWS - idx - 1, N_ROWS - idx, color="red", lw=3)
@@ -2002,7 +1990,7 @@ def main():
 
             outfile = gzip.open(fasta_not_aligned_filename, "wt")
 
-            for x0, x1 in sr_not_aligned.iteritems():
+            for x0, x1 in sr_not_aligned.items():
                 outfile.write(">%s\n%s\n" % (x0, x1))
 
             # write reverse complement of ampl and expected amplicon
@@ -2160,7 +2148,7 @@ def main():
         df_needle_alignment["n_inserted"] = 0
         df_needle_alignment["n_deleted"] = 0
 
-        N_TOTAL = df_needle_alignment.shape[0] * 1.0
+        N_TOTAL = df_needle_alignment.shape[0]
 
         if N_TOTAL == 0:
             raise NoReadsAlignedException(
@@ -2241,7 +2229,7 @@ def main():
         # look around the sgRNA(s) only?
         if cut_points and args.window_around_sgrna > 0:
             include_idxs = []
-            half_window = max(1, args.window_around_sgrna / 2)
+            half_window = max(1, args.window_around_sgrna // 2)
             for cut_p in cut_points:
                 st = max(0, cut_p - half_window + 1)
                 en = min(len(args.amplicon_seq) - 1, cut_p + half_window + 1)
@@ -2267,7 +2255,7 @@ def main():
         def get_chunk(df_needle_alignment, n_processes=args.n_processes):
             for g, df in df_needle_alignment.groupby(
                 np.arange(len(df_needle_alignment))
-                // (len(df_needle_alignment) / (args.n_processes - 1))
+                // (len(df_needle_alignment) // (args.n_processes - 1))
             ):
                 yield df
 
@@ -2375,7 +2363,7 @@ def main():
         # disable known division warning
         with np.errstate(divide="ignore", invalid="ignore"):
 
-            effect_vector_combined = 100 * effect_vector_any / float(N_TOTAL)
+            effect_vector_combined = 100. * effect_vector_any / float(N_TOTAL)
 
             avg_vector_ins_all /= (
                 effect_vector_insertion
@@ -2448,7 +2436,7 @@ def main():
             inplace=True,
         )
         # df_alleles.set_index('Aligned_Sequence',inplace=True)
-        df_alleles["%Reads"] = df_alleles["#Reads"] / df_alleles["#Reads"].sum() * 100
+        df_alleles["%Reads"] = df_alleles["#Reads"] / df_alleles["#Reads"].sum() * 100.
 
         df_alleles.sort_values(by="#Reads", ascending=False, inplace=True)
 
@@ -2468,8 +2456,8 @@ def main():
             max_cut = max(cut_points)
             xmin, xmax = -min_cut, len_amplicon - max_cut
         else:
-            min_cut = len_amplicon / 2
-            max_cut = len_amplicon / 2
+            min_cut = len_amplicon // 2
+            max_cut = len_amplicon // 2
             xmin, xmax = -min_cut, +max_cut
 
         hdensity, hlengths = np.histogram(
@@ -2511,14 +2499,14 @@ def main():
         plt.figure(figsize=(8.3, 8))
         plt.bar(
             0,
-            hdensity[center_index] / (float(hdensity.sum())) * 100.0,
+            hdensity[center_index] / (float(hdensity.sum())) * 100.,
             color="red",
             linewidth=0,
         )
         # plt.hold(True)
         barlist = plt.bar(
             hlengths,
-            hdensity / (float(hdensity.sum())) * 100.0,
+            hdensity / (float(hdensity.sum())) * 100.,
             align="center",
             linewidth=0,
         )
@@ -3026,7 +3014,7 @@ def main():
         )
         plt.xticks(
             np.arange(
-                0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
             ).astype(int)
         )
 
@@ -3122,14 +3110,14 @@ def main():
             )
             ylabel_values = np.arange(0, 1, 1.0 / 6.0)
             if y_max > 0:
-                y_label_values = np.arange(0, y_max, y_max / 6).astype(int)
+                y_label_values = np.arange(0, y_max, y_max // 6).astype(int)
             plt.yticks(
                 y_label_values,
                 [
                     "%.1f%% (%.1f%% , %d)"
                     % (
-                        n_reads / float(N_TOTAL) * 100,
-                        n_reads / float(N_REPAIRED) * 100,
+                        n_reads / float(N_TOTAL) * 100.,
+                        n_reads / float(N_REPAIRED) * 100.,
                         n_reads,
                     )
                     for n_reads in y_label_values
@@ -3137,7 +3125,7 @@ def main():
             )
             plt.xticks(
                 np.arange(
-                    0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                    0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
                 ).astype(int)
             )
 
@@ -3230,14 +3218,14 @@ def main():
             )
             ylabel_values = np.arange(0, 1, 1.0 / 6.0)
             if y_max > 0:
-                y_label_values = np.arange(0, y_max, y_max / 6).astype(int)
+                y_label_values = np.arange(0, y_max, y_max // 6).astype(int)
             plt.yticks(
                 y_label_values,
                 [
                     "%.1f%% (%.1f%% , %d)"
                     % (
-                        n_reads / float(N_TOTAL) * 100,
-                        n_reads / float(N_MIXED_HDR_NHEJ) * 100,
+                        n_reads / float(N_TOTAL) * 100.,
+                        n_reads / float(N_MIXED_HDR_NHEJ) * 100.,
                         n_reads,
                     )
                     for n_reads in y_label_values
@@ -3245,7 +3233,7 @@ def main():
             )
             plt.xticks(
                 np.arange(
-                    0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                    0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
                 ).astype(int)
             )
 
@@ -3308,7 +3296,7 @@ def main():
 
         plt.xticks(
             np.arange(
-                0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
             ).astype(int)
         )
         plt.xlabel("Reference amplicon position (bp)")
@@ -3349,7 +3337,7 @@ def main():
 
         plt.xticks(
             np.arange(
-                0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
             ).astype(int)
         )
         plt.xlabel("Reference amplicon position (bp)")
@@ -3461,7 +3449,7 @@ def main():
             # profiles-----------------------------------------------------------------------------------
             fig = plt.figure(figsize=(22, 10))
             ax1 = fig.add_subplot(2, 1, 1)
-            x, y = map(np.array, zip(*[a for a in hist_frameshift.iteritems()]))
+            x, y = map(np.array, zip(*[a for a in hist_frameshift.items()]))
             y = y / float(sum(hist_frameshift.values())) * 100
             ax1.bar(x - 0.5, y)
             ax1.set_xlim(-30.5, 30.5)
@@ -3487,7 +3475,7 @@ def main():
             plt.ylabel("%")
 
             ax2 = fig.add_subplot(2, 1, 2)
-            x, y = map(np.array, zip(*[a for a in hist_inframe.iteritems()]))
+            x, y = map(np.array, zip(*[a for a in hist_inframe.items()]))
             y = y / float(sum(hist_inframe.values())) * 100
             ax2.bar(x - 0.5, y, color=(0, 1, 1, 0.2))
             ax2.set_xlim(-30.5, 30.5)
@@ -3633,7 +3621,7 @@ def main():
             )
             plt.xticks(
                 np.arange(
-                    0, len_amplicon, max(3, (len_amplicon / 6) - (len_amplicon / 6) % 5)
+                    0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
                 ).astype(int)
             )
 
@@ -3762,6 +3750,20 @@ def main():
         nhej_inserted = np.sum(
             df_needle_alignment.loc[df_needle_alignment.NHEJ, "n_inserted"] > 0
         )
+
+        # Initially set to NaN
+        # Then use if-then to calculate values
+        nhej_deleted = np.nan
+        nhej_mutated = np.nan
+
+        hdr_inserted = np.nan
+        hdr_deleted = np.nan
+        hdr_mutated = np.nan
+
+        mixed_inserted = np.nan
+        mixed_deleted = np.nan
+        mixed_mutated = np.nan
+
         if np.isnan(nhej_inserted):
             nhej_inserted = 0
             nhej_deleted = np.sum(

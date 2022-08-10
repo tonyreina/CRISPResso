@@ -188,7 +188,7 @@ def get_n_reads_fastq(fastq_filename):
         shell=True,
         stdout=sb.PIPE,
     )
-    return int(float(p.communicate()[0]) / 4.0)
+    return p.communicate()[0] // 4
 
 
 def get_n_aligned_bam(bam_filename):
@@ -914,7 +914,7 @@ def main():
 
             df_template["n_reads"] = n_reads_aligned_amplicons
             df_template["n_reads_aligned_%"] = (
-                df_template["n_reads"] / float(N_READS_ALIGNED) * 100
+                df_template["n_reads"] / float(N_READS_ALIGNED) * 100.
             )
             df_template.fillna("NA").to_csv(
                 _jp("REPORT_READS_ALIGNED_TO_AMPLICONS.txt"), sep="\t"
@@ -1160,7 +1160,7 @@ def main():
             df_template["Amplicon_Specific_fastq.gz_filename"] = fastq_region_filenames
             df_template["n_reads"] = n_reads_aligned_genome
             df_template["n_reads_aligned_%"] = (
-                df_template["n_reads"] / float(N_READS_ALIGNED) * 100
+                df_template["n_reads"] / float(N_READS_ALIGNED) * 100.
             )
 
             if args.gene_annotations:
@@ -1196,7 +1196,7 @@ def main():
             df_regions.bpend = df_regions.bpend.astype(int)
 
             df_regions["n_reads_aligned_%"] = (
-                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100
+                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100.
             )
 
             df_regions["Reference_sequence"] = df_regions.apply(
@@ -1258,7 +1258,7 @@ def main():
             )
 
             df_regions["n_reads_aligned_%"] = (
-                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100
+                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100.
             )
 
             if args.gene_annotations:
@@ -1382,10 +1382,10 @@ def main():
                 quantification_summary.append(
                     [
                         idx,
-                        N_UNMODIFIED / N_TOTAL * 100,
-                        N_MODIFIED / N_TOTAL * 100,
-                        N_REPAIRED / N_TOTAL * 100,
-                        N_MIXED_HDR_NHEJ / N_TOTAL * 100,
+                        N_UNMODIFIED / N_TOTAL * 100.,
+                        N_MODIFIED / N_TOTAL * 100.,
+                        N_REPAIRED / N_TOTAL * 100.,
+                        N_MIXED_HDR_NHEJ / N_TOTAL * 100.,
                         N_TOTAL,
                         row.n_reads,
                     ]
@@ -1426,7 +1426,7 @@ def main():
         if RUNNING_MODE == "ONLY_AMPLICONS":
             this_bam_filename = bam_filename_amplicons
         # if less than 1/2 of reads aligned, find most common unaligned reads and advise the user
-        if tot_reads > 0 and tot_reads_aligned / tot_reads < 0.5:
+        if (tot_reads > 0) and (tot_reads_aligned / tot_reads < 0.5):
             warn(
                 "Less than half (%d/%d) of reads aligned. Finding most frequent unaligned reads."
                 % (tot_reads_aligned, tot_reads)

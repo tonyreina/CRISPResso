@@ -806,10 +806,10 @@ def main():
                 quantification_summary.append(
                     [
                         idx,
-                        N_UNMODIFIED / N_TOTAL * 100,
-                        N_MODIFIED / N_TOTAL * 100,
-                        N_REPAIRED / N_TOTAL * 100,
-                        N_MIXED_HDR_NHEJ / N_TOTAL * 100,
+                        N_UNMODIFIED / N_TOTAL * 100.,
+                        N_MODIFIED / N_TOTAL * 100.,
+                        N_REPAIRED / N_TOTAL * 100.,
+                        N_MIXED_HDR_NHEJ / N_TOTAL * 100.,
                         N_TOTAL,
                         row.n_reads,
                     ]
