@@ -70,11 +70,11 @@ def main():
             "Environment :: Console",
             "Intended Audience :: Developers",
             "Intended Audience :: Science/Research",
-            "License :: OSI Approved :: BSD License",
+            "License :: OSI Approved :: AGPL License",
             "Operating System :: MacOS :: MacOS X",
             "Operating System :: POSIX",
             "Topic :: Scientific/Engineering :: Bio-Informatics",
-            "Programming Language :: Python",
+            "Programming Language :: Python :: 3",
         ],
         install_requires=[
             "numpy>=1.9",
