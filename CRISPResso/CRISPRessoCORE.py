@@ -125,7 +125,7 @@ def find_wrong_nt(sequence):
 def get_ids_reads_to_remove(fastq_filename, min_bp_quality=20, min_single_bp_quality=0):
     ids_to_remove = set()
     if fastq_filename.endswith(".gz"):
-        fastq_handle = gzip.open(fastq_filename)
+        fastq_handle = gzip.open(fastq_filename, "rt")
     else:
         fastq_handle = open(fastq_filename)
 
@@ -163,12 +163,12 @@ def filter_pe_fastq_by_qual(
     ids_to_remove = ids_to_remove_s1.union(ids_to_remove_s2)
 
     if fastq_r1.endswith(".gz"):
-        fastq_handle_r1 = gzip.open(fastq_r1)
+        fastq_handle_r1 = gzip.open(fastq_r1, "rt")
     else:
         fastq_handle_r1 = open(fastq_r1)
 
     if fastq_r2.endswith(".gz"):
-        fastq_handle_r2 = gzip.open(fastq_r2)
+        fastq_handle_r2 = gzip.open(fastq_r2, "rt")
     else:
         fastq_handle_r2 = open(fastq_r2)
 
@@ -209,7 +209,7 @@ def filter_se_fastq_by_qual(
 ):
 
     if fastq_filename.endswith(".gz"):
-        fastq_handle = gzip.open(fastq_filename)
+        fastq_handle = gzip.open(fastq_filename, "rt")
     else:
         fastq_handle = open(fastq_filename)
 
