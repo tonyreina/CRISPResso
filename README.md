@@ -6,6 +6,7 @@ CRISPResso is a software pipeline for the analysis of targeted CRISPR-Cas9 seque
 **NOTE**
 
 [CRISPResso2](https://github.com/pinellolab/crispresso2) is the updated, improved version of this project. The purpose of this fork is to update the old code to work in Python 3+.
+
 ---
 
 ![CRISPResso logo](https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso.png)
