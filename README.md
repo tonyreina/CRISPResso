@@ -1,76 +1,65 @@
-THIS IS AN OLD VERSION OF CRISPRESSO AND IT IS NOW DEPRECATED
-=============================================================
-
-PLEASE USE CRISPRESSO2
-======================
-
-https://github.com/pinellolab/crispresso2
-==========================================
-
-
-.. image:: https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso.png?raw=true
-
+# CRISPResso
 
 CRISPResso is a software pipeline for the analysis of targeted CRISPR-Cas9 sequencing data. This algorithm allows for the quantification of both non-homologous end joining (NHEJ) and homologous directed repair (HDR) occurrences.
 
+---
+**NOTE**
+
+[CRISPResso2](https://github.com/pinellolab/crispresso2) is the updated, improved version of this project. The purpose of this fork is to update the old code to work in Python 3+.
+---
+
+![CRISPResso logo](https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso.png)
 
 CRISPResso automatizes and performs the following steps summarized in the figure below: 
 
-1) filters low quality reads, 
-2) trims adapters, 
-3) aligns the reads to a reference amplicon, 
-4) quantifies the proportion of HDR and NHEJ outcomes, 
-5) quantifies frameshift/inframe mutations (if applicable) and identifies affected splice sites,
-6) produces a graphical report to visualize and quantify the indels distribution and position.
+1. filters low quality reads, 
+2. trims adapters, 
+3. aligns the reads to a reference amplicon, 
+4. quantifies the proportion of HDR and NHEJ outcomes, 
+5. quantifies frameshift/inframe mutations (if applicable) and identifies affected splice sites,
+6. produces a graphical report to visualize and quantify the indels distribution and position.
 
-.. image:: https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso_pipeline.png?raw=true
-
+![CRISPResso pipeline](https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso_pipeline.png)
 
 The CRISPResso suite accommodates single or pooled amplicon deep sequencing, WGS datasets and allows the direct comparison of individual experiments. In fact four additional utilities are provided:
 
-1) **CRISPRessoPooled**: a tool for the analysis of pooled amplicon experiments 
-2) **CRISPRessoWGS**: a tool for the analysis of WGS data or prealigned reads in .bam format
-3) **CRISPRessoCompare**:a tool for the comparison of two CRISPResso analyses, useful for example to compare treated and untreated samples or to compare different experimental conditions 
-4) **CRISPRessoPooledCompare**: a tool to compare experiments involving several regions analyzed by either CRISPRessoPooled or CRISPRessoWGS 
+1. **CRISPRessoPooled**: a tool for the analysis of pooled amplicon experiments 
+2. **CRISPRessoWGS**: a tool for the analysis of WGS data or prealigned reads in .bam format
+3. **CRISPRessoCompare**:a tool for the comparison of two CRISPResso analyses, useful for example to compare treated and untreated samples or to compare different experimental conditions 
+4. **CRISPRessoPooledCompare**: a tool to compare experiments involving several regions analyzed by either CRISPRessoPooled or CRISPRessoWGS 
 
-
-TRY IT ONLINE! 
---------------
-If you don't like command line tools you can also use CRISPResso online here:  http://crispresso.rocks
-
-
-Installation and Requirements
------------------------------
+## Installation and Requirements
 
 To install the command line version of CRISPResso, some dependencies must be installed before running the setup:
 
-1) Python 2.7 Anaconda:  http://continuum.io/downloads
-2) Java: http://java.com/download
-3) C compiler / make. For Mac with OSX 10.7 or greater, open the terminal app and type and execute the command 'make', which will trigger the installation of OSX developer tools.Windows systems are not officially supported, although CRISPResso may work with Cygwin (https://www.cygwin.com/).
+1. Python 3+
+2. Java: http://java.com/download
+3. C compiler / make. For Mac with OSX 10.7 or greater, open the terminal app and type and execute the command 'make', which will trigger the installation of OSX developer tools.Windows systems are not officially supported, although CRISPResso may work with Cygwin (https://www.cygwin.com/).
 
 After checking that the required software is installed you can install CRISPResso from the official Python repository following these steps:
 
-1) Open a terminal window
-2) Type the command: 
+1. Open a terminal window
+2. Type the command: 
 
-.. code:: bash
+```bash
 
         pip install CRISPResso  --no-use-wheel --verbose
-      
-3) Close the terminal window 
+```
+
+3. Close the terminal window 
 
 Alternatively if want to install the package without the PIP utility:
 
-1) Download the setup file: https://github.com/lucapinello/CRISPResso/archive/master.zip and decompress it  
-2) Open a terminal window  and go to the folder where you have decompressed the zip file
-3) Type the command: python setup.py install
-4) Close the terminal window and open a new one  (this is important in order to setup correctly the PATH variable in your system).
+1. Download the setup file: https://github.com/lucapinello/CRISPResso/archive/master.zip and decompress it  
+2. Open a terminal window  and go to the folder where you have decompressed the zip file
+3. Type the command: python setup.py install
+4. Close the terminal window and open a new one  (this is important in order to setup correctly the PATH variable in your system).
 
 The Setup will try to install these software for you:
 
-1) Trimmomatic(tested with v0.33): http://www.usadellab.org/cms/?page=trimmomatic
-2) Flash(tested with v1.2.11): http://ccb.jhu.edu/software/FLASH/
-3) Needle from the EMBOSS suite(tested with 6.6.0): ftp://emboss.open-bio.org/pub/EMBOSS/
+1. Trimmomatic(tested with v0.33): http://www.usadellab.org/cms/?page=trimmomatic
+2. Flash(tested with v1.2.11): http://ccb.jhu.edu/software/FLASH/
+3. Needle from the EMBOSS suite(tested with 6.6.0): ftp://emboss.open-bio.org/pub/EMBOSS/
 
 If the setup fails on your machine you have to install them manually and put these utilities/binary files in your path!
 
@@ -78,34 +67,19 @@ To check that the installation worked, open a terminal window and execute CRISPR
 
 The setup will automatically create a folder in your home folder called CRISPResso_dependencies (if this folder is deleted, CRISPResso will not work!)! If you want to put the folder in a different location, you need to set the environment variable: CRISPRESSO_DEPENDENCIES_FOLDER. For example to put the folder in /home/lpinello/other_stuff you can write in the terminal *BEFORE* the installation:
 
-.. code:: bash
+```bash
         
         export CRISPRESSO_DEPENDENCIES_FOLDER=/home/lpinello/other_stuff
+```
 
+## OUTPUT
 
-Docker Image
-------------
-If you like Docker, we provide a Docker image ready to use, so no installation is required!
-	
-	https://hub.docker.com/r/lucapinello/crispresso/
-
-To use the image first install Docker: https://docs.docker.com/engine/installation/
-
-Then type the command:
-
-	docker pull lucapinello/crispresso
-
-See an example on how to run CRISPResso from a Docker image in the section **TESTING CRISPResso** below.
-
-OUTPUT
------------
 The output of CRISPResso consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence. An example is shown below:
 
-.. image:: https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso_output.png?raw=true
+![CRISPResso output](https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso_output.png)
 
+## Usage
 
-Usage
------
 CRISPResso requires two inputs: (1) paired-end reads (two files) or single-end reads (single file) in .fastq format (fastq.gz files are also accepted) from a deep sequencing experiment and (2) a reference amplicon sequence to assess and quantify the efficiency of the targeted mutagenesis. The amplicon sequence expected after HDR can be provided as an optional input to assess HDR frequency. One or more sgRNA sequences (without PAM sequences) can be provided to compare the predicted cleavage position/s to the position of the observed mutations. Coding sequence/s may be provided to quantify frameshift and potential splice site mutations. 
 
 The reads are first filtered based on the quality score (phred33) in order to remove potentially false positive indels. The filtering based on the phred33 quality score can be modulated by adjusting the optimal parameters (see additional notes below). The adapters are trimmed from the reads using Trimmomatic and then sequences are merged with FLASha (if using paired-end data).The remaining reads are then aligned with needle from the EMBOSS suite, an optimal global sequence aligner based on the Needleman-Wunsch algorithm that can easily accounts for gaps. Finally, after analyzing the aligned reads, a set of informative graphs are generated, allowing for the quantification and visualization of the position and type of outcomes within the amplicon sequence.
@@ -119,9 +93,11 @@ The required inputs are:
 
 Example:
 
-.. code:: bash
+``bash
 
-                        CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT
+
+```
 
 HDR events:
 The required inputs are: 
@@ -132,18 +108,18 @@ The required inputs are:
 
 Example:
 
-.. code:: bash
+```bash
 
-                        CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a GCTTACACTTGCTTCTGACACAACTGTGTTCACGAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGAGGAGAAGAATGCCGTCACCACCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAAGGTTACAAGA -e GCTTACACTTGCTTCTGACACAACTGTGTTCACGAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGTGGAAAAAAACGCCGTCACGACGTTATGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAAGGTTACAAGA
-                        
+CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a GCTTACACTTGCTTCTGACACAACTGTGTTCACGAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGAGGAGAAGAATGCCGTCACCACCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAAGGTTACAAGA -e GCTTACACTTGCTTCTGACACAACTGTGTTCACGAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGTGGAAAAAAACGCCGTCACGACGTTATGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAAGGTTACAAGA
+```
+
 IMPORTANT: You must input the entire reference amplicon sequence (’Expected HDR Amplicon sequence’ is the reference for the sequenced amplicon, not simply the donor sequence).  If only the donor sequence is provided, an error will result
 
-Understanding the parameters of CRISPResso
-------------------------------------------
+## Understanding the parameters of CRISPResso
 
 Required parameters
  To run CRISPResso, only 2 parameters are required for single end reads, or 3 for paired end reads:
-
+```
 -r1 or --fastq_r1: This parameter allows for the specification of the first fastq file.
  
 -r2 or  --fastq_r2 FASTQ_R2: This parameter allows for the specification of the second fastq file for paired end reads.
@@ -209,10 +185,9 @@ If you got your data from the MGH sequencing core in Boston (https://dnacore.mgh
 
 -p, --n_processes 
 Specify the number of processes to use for the quantification.  This parameter is useful to speed up the quantification and generation of the mutation profiles when multiple CPUs are available. Please use with caution since increasing this parameter will increase significantly the memory required to run CRISPResso (default: 1). 
+```
 
-
-Troubleshooting:
-----------------
+## Troubleshooting
 
 - It is important to check if your reads are trimmed or not. CRISPResso assumes that the reads are already trimmed! If reads are not trimmed, use the option --trim_sequences. The default adapter file used is the Nextera. If you want to specify a custom adapter use the option --trimmomatic_options_string.
 - It is possible to use CRISPResso with single end reads. In this case, just omit the option -r2 to specify the second fastq file.
@@ -223,40 +198,7 @@ Troubleshooting:
 - Use the following command to get to your folder (directory) with sequencing files, assuming that is /home/lpinello/Desktop/CRISPResso_Folder/Sequencing_Files_Folder: cd /home/lpinello/Desktop/CRISPResso_Folder/Sequencing_Files_Folder
 - CRISPResso’s default setting is to output analysis files into your directory, otherwise use the --output parameter.
 
-TESTING CRISPResso
-------------------
-
-1) Download the two fastq files:
-
-- http://bcb.dfci.harvard.edu/~lpinello/CRISPResso/reads1.fastq.gz 
-- http://bcb.dfci.harvard.edu/~lpinello/CRISPResso/reads2.fastq.gz
-
-2) Open a terminal and go to the folder where you have stored the files
-
-3) Type: 
-
-.. code:: bash
-
-                        CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -g TGAACCAGACCACGGCCCGT 
-
-4) CRISPResso will create a folder with the processed data and the figures.
-
-
-If you use a Docker image instead run with the following command:
-
-.. code:: bash
-
-	docker run -v ${PWD}:/DATA -w /DATA  -i lucapinello/crispresso CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -g TGAACCAGACCACGGCCCGT
-
-If you run Docker on Window you have to specify the full path:
-
-.. code:: bash
-
-        docker run -v //c/Users/luca/Downloads:/DATA -w /DATA lucapinello/crispresso CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCTGGCACTGCCCACAGGTGAGGAGGTCATGATCCCCTTCTGGAGCTCCCAACGGGCCGTGGTCTGGTTCATCATCTGTAAGAATGGCTTCAAGAGGCTCGGCTGTGGTT -g TGAACCAGACCACGGCCCGT
-
-
-Useful tips
------------
+## Useful tips
 
 - The log of the external utilities called are stored in the file CRISPResso_RUNNING_LOG.txt
 - You can specify the output folder with the option --output_folder
@@ -280,8 +222,7 @@ Useful tips
 
 
 
-Explore the output of CRISPResso
---------------------------------
+## Explore the output of CRISPResso
 
 In order to help you to familiarize with the output of CRISPResso we provide several precomputed analyses, using the standard settings, for different simulated sequencing datasets with sequencing artifact modeled after the Illumina Miseq platform (using the ART simulation tool: http://www.niehs.nih.gov/research/resources/software/biostatistics/art/ ) and with known editing efficiency and mutagenesis profile:
 
@@ -306,8 +247,7 @@ In order to help you to familiarize with the output of CRISPResso we provide sev
 10) 1000 unmodified reads, 1000 reads with a deletion of 50 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_50_del_MISEQ_ERROR_WINDOW_1bp.zip
 
 
-Installation and usage of CRISPRessoPooled
-------------------------------------------
+## Installation and usage of CRISPRessoPooled
 
 CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving sequencing libraries with pooled amplicons. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with
 regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a
@@ -380,9 +320,10 @@ spreadsheet software like Excel (Microsoft), Numbers (Apple) or Sheets
 
 Example:
 
-.. code:: bash
+```bash
 
         CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz
+```
 
 The output of CRISPRessoPooled Amplicons mode consists of:
 
@@ -438,9 +379,10 @@ To run the tool in this mode the user must provide:
 
 Example:
 
-.. code:: bash
+```bash
 
         CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+```
 
 The output of CRISPRessoPooled Genome mode consists of:
 
@@ -505,9 +447,10 @@ To run the tool in this mode the user must provide:
 
 Example:
 
-.. code:: bash
+```bash
 
-        CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt -x /gcdata/gcproj/Luca/GENOMES  /hg19/hg19 --name AMPLICONS\_AND\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+```
 
 The output of CRISPRessoPooled Mixed Amplicons + Genome mode consists of
 these files:
@@ -562,8 +505,7 @@ his may be time consuming). Finally the Amplicon mode is the fastest,
 although the least reliable in terms of quantification accuracy.
 
 
-Installation and usage of CRISPRessoWGS
----------------------------------------
+## Installation and usage of CRISPRessoWGS
 
 CRISPRessoWGS is a utility for the analysis of genome editing experiment
 from whole genome sequencing (WGS) data. CRISPRessoWGS allows exploring
@@ -633,9 +575,10 @@ BED file with 4 columns, is also **accepted** by this utility.
 
 Example:
 
-.. code:: bash
+```bash
 
-        CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350
+CRISPRessoWGS -b WGS/50/50\_sorted\_rmdup\_fixed\_groups.bam -f WGS\_TEST.txt -r /gcdata/gcproj/Luca/GENOMES/mm9/mm9.fa --gene\_annotations ensemble\_mm9.txt.gz --name CRISPR\_WGS\_SRR1542350
+```
 
 The output from these files will consist of:
 
@@ -696,11 +639,13 @@ To run CRISPRessoCompare you must provide:
 
 Example:
 
-.. code:: bash
+```bash
 
-        CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
+CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR10467_VS_SRR1046787 CRISPResso_on_VEGFA_Site_1_SRR1046762/ CRISPResso_on_VEGFA_Site_1_SRR1046787/
 
-.. image:: https://github.com/lucapinello/CRISPResso/blob/master/CRISPRessoCompare_output.png?raw=true
+```
+
+![Compare output](https://github.com/lucapinello/CRISPResso/blob/master/CRISPRessoCompare_output.png)
 
 The output will consist of:
 
@@ -709,10 +654,9 @@ The output will consist of:
 3.	CRISPRessoCompare_RUNNING_LOG.txt: detailed execution log. 
 
 
-Installation and usage of CRISPRessoPooledWGSCompare
-----------------------------------------------------
-CRISPRessoPooledWGSCompare is an extension of the CRIPRessoCompare utility allowing the user to run and summarize multiple CRISPRessoCompare analyses where several regions are analyzed in two different conditions, as in the case of the CRISPRessoPooled or CRISPRessoWGS utilities.
+## Installation and usage of CRISPRessoPooledWGSCompare
 
+CRISPRessoPooledWGSCompare is an extension of the CRIPRessoCompare utility allowing the user to run and summarize multiple CRISPRessoCompare analyses where several regions are analyzed in two different conditions, as in the case of the CRISPRessoPooled or CRISPRessoWGS utilities.
 
 **Installation**
 
@@ -724,23 +668,23 @@ To run CRISPRessoPooledWGSCompare you must provide:
 
 Example:
 
-.. code:: bash
+```bash
 
-        CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
+CRISPRessoPooledWGSCompare CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046762/ CRISPRessoPooled_on_AMPLICONS_AND_GENOME_SRR1046787/ -n1 SRR1046762 -n2 SRR1046787 -n AMPLICONS_AND_GENOME_SRR1046762_VS_SRR1046787
+```
 
 The output from these files will consist of:
 1.	COMPARISON_SAMPLES_QUANTIFICATION_SUMMARIES.txt: this file contains a summary of the quantification for each of the two conditions for each region and their difference (read counts and percentages for the various classes: Unmodified, NHEJ, MIXED NHEJ-HDR  and HDR).
 2.	A set of folders with CRISPRessoCompare reports on the common regions with enough reads in both conditions.
 3.	CRISPRessoPooledWGSCompare_RUNNING_LOG.txt: detailed execution log. 
 
-How to cite CRISPResso
-----------------------
+## How to cite CRISPResso
 
 If you use CRISPResso in your work please cite:  
 
  **Pinello L, Canver MC, Hoban MD, Orkin SH, Kohn DB, Bauer DE, Yuan GC. Analyzing CRISPR genome-editing experiments with CRISPResso. Nat Biotechnol. 2016 Jul 12;34(7):695-697. doi: 10.1038/nbt.3583. PubMed PMID: 27404874.**
 
 
-Acknowledgements
-----------------
+## Acknowledgements
+
 We are grateful to Feng Zhang and David Scott for useful feedback and suggestions; the FAS Research Computing Team, in particular Daniel Kelleher, for great support in hosting the web application of CRISPResso; and Sorel Fitz-Gibbon from UCLA for help in sharing data. Finally, we thank all members of the Guo-Cheng Yuan lab for testing the software.
