@@ -2,11 +2,11 @@
 # Dockerfile to build CRISPResso
 ############################################################
 
-# Set the base image to anaconda python 2.7
-FROM continuumio/anaconda 
+# Set the base image to anaconda python 3
+FROM continuumio/anaconda3
 
 # File Author / Maintainer
-MAINTAINER Luca Pinello 
+MAINTAINER Tony Reina/Luca Pinello 
 
 ENV SHELL bash
 
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install default-jre samtools bowtie2 make gcc g++ 
 
 RUN conda install biopython
 
-RUN wget https://github.com/lucapinello/CRISPResso/archive/master.zip
+RUN wget https://github.com/tonyreina/CRISPResso/archive/master.zip
 
 RUN unzip master.zip
 
