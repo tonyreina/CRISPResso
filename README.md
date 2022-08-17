@@ -1,6 +1,6 @@
 # CRISPResso
 
-CRISPResso is a software pipeline for the analysis of targeted CRISPR-Cas9 sequencing data. This algorithm allows for the quantification of both non-homologous end joining (NHEJ) and homologous directed repair (HDR) occurrences.
+CRISPResso is a software pipeline for the analysis of targeted CRISPR-Cas9 sequencing data. This algorithm allows for the quantification of both [non-homologous end joining (NHEJ)](https://en.wikipedia.org/wiki/Non-homologous_end_joining) and [homologous directed repair (HDR)](https://en.wikipedia.org/wiki/Homology_directed_repair)  occurrences.
 
 ---
 **NOTE**
