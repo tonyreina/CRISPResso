@@ -35,7 +35,7 @@ To install the command line version of CRISPResso, some dependencies must be ins
 
 1. Python 3+
 2. Java: http://java.com/download
-3. C compiler / make. For Mac with OSX 10.7 or greater, open the terminal app and type and execute the command 'make', which will trigger the installation of OSX developer tools.Windows systems are not officially supported, although CRISPResso may work with Cygwin (https://www.cygwin.com/).
+3. C compiler / make. For Mac with OSX 10.7 or greater, open the terminal app and type and execute the command `make`, which will trigger the installation of OSX developer tools.Windows systems are not officially supported, although CRISPResso may work with Cygwin (https://www.cygwin.com/).
 
 After checking that the required software is installed you can install CRISPResso from the official Python repository following these steps:
 
