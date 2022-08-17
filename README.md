@@ -44,7 +44,7 @@ After checking that the required software is installed you can install CRISPRess
 
 ```bash
 
-        pip install CRISPResso  --no-use-wheel --verbose
+pip install CRISPResso  --no-use-wheel --verbose
 ```
 
 3. Close the terminal window 
@@ -70,7 +70,7 @@ The setup will automatically create a folder in your home folder called CRISPRes
 
 ```bash
         
-        export CRISPRESSO_DEPENDENCIES_FOLDER=/home/lpinello/other_stuff
+export CRISPRESSO_DEPENDENCIES_FOLDER=/home/lpinello/other_stuff
 ```
 
 ## OUTPUT
