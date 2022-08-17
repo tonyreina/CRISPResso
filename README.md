@@ -9,7 +9,7 @@ CRISPResso is a software pipeline for the analysis of targeted CRISPR-Cas9 seque
 
 ---
 
-![CRISPResso logo](https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso.png)
+![CRISPResso logo](https://github.com/tonyreina/CRISPResso/blob/master/CRISPResso.png)
 
 CRISPResso automatizes and performs the following steps summarized in the figure below: 
 
@@ -20,7 +20,7 @@ CRISPResso automatizes and performs the following steps summarized in the figure
 5. quantifies frameshift/inframe mutations (if applicable) and identifies affected splice sites,
 6. produces a graphical report to visualize and quantify the indels distribution and position.
 
-![CRISPResso pipeline](https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso_pipeline.png)
+![CRISPResso pipeline](https://github.com/tonyreina/CRISPResso/blob/master/CRISPResso_pipeline.png)
 
 The CRISPResso suite accommodates single or pooled amplicon deep sequencing, WGS datasets and allows the direct comparison of individual experiments. In fact four additional utilities are provided:
 
@@ -39,7 +39,7 @@ To install the command line version of CRISPResso, some dependencies must be ins
 On Ubuntu:
 ```bash
 
-apt-get install default-jre samtools bowtie2 make gcc g++ zlib1g-dev zlib1g unzip
+apt-get update && apt-get install default-jre samtools bowtie2 make gcc g++ zlib1g-dev zlib1g unzip -y
 ```
 
 3. C compiler / make. For Mac with OSX 10.7 or greater, open the terminal app and type and execute the command `make`, which will trigger the installation of OSX developer tools. Windows systems are not officially supported, although CRISPResso may work with [Cygwin](https://www.cygwin.com/).
@@ -58,7 +58,7 @@ pip install CRISPResso  --no-use-wheel --verbose
 
 Alternatively if want to install the package without the PIP utility:
 
-1. Download the setup file: https://github.com/lucapinello/CRISPResso/archive/master.zip and decompress it  
+1. Download the setup file: https://github.com/tonyreina/CRISPResso/archive/master.zip and decompress it  
 2. Open a terminal window  and go to the folder where you have decompressed the zip file
 3. Type the command: python setup.py install
 4. Close the terminal window and open a new one  (this is important in order to setup correctly the PATH variable in your system).
@@ -84,7 +84,7 @@ export CRISPRESSO_DEPENDENCIES_FOLDER=/home/lpinello/other_stuff
 
 The output of CRISPResso consists of a set of informative graphs that allow for the quantification and visualization of the position and type of outcomes within an amplicon sequence. An example is shown below:
 
-![CRISPResso output](https://github.com/lucapinello/CRISPResso/blob/master/CRISPResso_output.png)
+![CRISPResso output](https://github.com/tonyreina/CRISPResso/blob/master/CRISPResso_output.png)
 
 ## Usage
 
@@ -121,7 +121,7 @@ Example:
 CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a GCTTACACTTGCTTCTGACACAACTGTGTTCACGAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGAGGAGAAGAATGCCGTCACCACCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAAGGTTACAAGA -e GCTTACACTTGCTTCTGACACAACTGTGTTCACGAGCAACCTCAAACAGACACCATGGTGCATCTGACTCCTGTGGAAAAAAACGCCGTCACGACGTTATGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGTTGGTATCAAGGTTACAAGA
 ```
 
-IMPORTANT: You must input the entire reference amplicon sequence (’Expected HDR Amplicon sequence’ is the reference for the sequenced amplicon, not simply the donor sequence).  If only the donor sequence is provided, an error will result
+IMPORTANT: You must input the entire reference amplicon sequence (*Expected HDR Amplicon sequence* is the reference for the sequenced amplicon, not simply the donor sequence).  If only the donor sequence is provided, an error will result
 
 ## Understanding the parameters of CRISPResso
 
@@ -330,7 +330,7 @@ Example:
 
 ```bash
 
-        CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -f AMPLICONS\_FILE.txt --name ONLY\_AMPLICONS\_SRR1046762 --gene\_annotations gencode\_v19.gz
 ```
 
 The output of CRISPRessoPooled Amplicons mode consists of:
@@ -389,7 +389,7 @@ Example:
 
 ```bash
 
-        CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
+CRISPRessoPooled -r1 SRR1046762\_1.fastq.gz -r2 SRR1046762\_2.fastq.gz -x /gcdata/gcproj/Luca/GENOMES/hg19/hg19 --name ONLY\_GENOME\_SRR1046762 --gene\_annotations gencode\_v19.gz
 ```
 
 The output of CRISPRessoPooled Genome mode consists of:
@@ -653,7 +653,7 @@ CRISPRessoCompare -n1 "VEGFA CRISPR" -n2 "VEGFA CONTROL"  -n VEGFA_Site_1_SRR104
 
 ```
 
-![Compare output](https://github.com/lucapinello/CRISPResso/blob/master/CRISPRessoCompare_output.png)
+![Compare output](https://github.com/ztonyreina/CRISPResso/blob/master/CRISPRessoCompare_output.png)
 
 The output will consist of:
 
