@@ -66,7 +66,7 @@ def filter_se_fastq_by_qual(
 ):
 
     if fastq_filename.endswith(".gz"):
-        fastq_handle = gzip.open(fastq_filename)
+        fastq_handle = gzip.open(fastq_filename, "rt")
     else:
         fastq_handle = open(fastq_filename)
 
@@ -313,7 +313,7 @@ def main():
             guides_count = defaultdict(lambda: 0)
 
         if processed_output_filename.endswith(".gz"):
-            infile = gzip.open(processed_output_filename)
+            infile = gzip.open(processed_output_filename, "rt")
         else:
             infile = open(processed_output_filename)
 

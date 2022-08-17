@@ -22,7 +22,7 @@ import shutil
 from os.path import expanduser
 import urllib
 
-# TO INSTALL CRISPRESSO DEPENDECIENS IN A CUSTOM LOCATION SET THE ENV VARIABLE: CRISPRESSO_DEPENDENCIES_FOLDER
+# TO INSTALL CRISPRESSO DEPENDENCIES IN A CUSTOM LOCATION SET THE ENV VARIABLE: CRISPRESSO_DEPENDENCIES_FOLDER
 if os.environ.get("CRISPRESSO_DEPENDENCIES_FOLDER"):
     INSTALLATION_PATH = os.environ.get("CRISPRESSO_DEPENDENCIES_FOLDER")
 else:
@@ -45,7 +45,7 @@ def main():
     # 		sys.exit(1)
 
     setup(
-        version=version,
+        version="1.1.0",
         name="CRISPResso-1.1",
         include_package_data=True,
         packages=["CRISPResso"],
@@ -77,12 +77,11 @@ def main():
             "Programming Language :: Python :: 3",
         ],
         install_requires=[
-            "numpy>=1.9",
-            "pandas>=0.15",
-            "matplotlib>=1.3.1",
-            "biopython>=1.6.5",
-            "argparse>=1.3",
-            "seaborn>=0.7.1",
+            "numpy",
+            "pandas",
+            "matplotlib",
+            "biopython",
+            "seaborn",
         ],
     )
 
