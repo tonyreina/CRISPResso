@@ -60,7 +60,7 @@ Alternatively if want to install the package without the PIP utility:
 
 1. Download the setup file: https://github.com/tonyreina/CRISPResso/archive/master.zip and decompress it  
 2. Open a terminal window  and go to the folder where you have decompressed the zip file
-3. Type the command: python setup.py install
+3. Type the command: `python setup.py install`
 4. Close the terminal window and open a new one  (this is important in order to setup correctly the PATH variable in your system).
 
 The Setup will try to install these software for you:
@@ -71,12 +71,11 @@ The Setup will try to install these software for you:
 
 If the setup fails on your machine you have to install them manually and put these utilities/binary files in your path!
 
-To check that the installation worked, open a terminal window and execute CRISPResso --help, you should see the help page.
+To check that the installation worked, open a terminal window and execute `CRISPResso --help`, you should see the help page.
 
 The setup will automatically create a folder in your home folder called CRISPResso_dependencies (if this folder is deleted, CRISPResso will not work!)! If you want to put the folder in a different location, you need to set the environment variable: CRISPRESSO_DEPENDENCIES_FOLDER. For example to put the folder in /home/lpinello/other_stuff you can write in the terminal *BEFORE* the installation:
 
 ```bash
-        
 export CRISPRESSO_DEPENDENCIES_FOLDER=/home/lpinello/other_stuff
 ```
 
@@ -90,13 +89,13 @@ The output of CRISPResso consists of a set of informative graphs that allow for 
 
 CRISPResso requires two inputs: (1) paired-end reads (two files) or single-end reads (single file) in .fastq format (fastq.gz files are also accepted) from a deep sequencing experiment and (2) a reference amplicon sequence to assess and quantify the efficiency of the targeted mutagenesis. The amplicon sequence expected after HDR can be provided as an optional input to assess HDR frequency. One or more sgRNA sequences (without PAM sequences) can be provided to compare the predicted cleavage position/s to the position of the observed mutations. Coding sequence/s may be provided to quantify frameshift and potential splice site mutations. 
 
-The reads are first filtered based on the quality score (phred33) in order to remove potentially false positive indels. The filtering based on the phred33 quality score can be modulated by adjusting the optimal parameters (see additional notes below). The adapters are trimmed from the reads using Trimmomatic and then sequences are merged with FLASha (if using paired-end data).The remaining reads are then aligned with needle from the EMBOSS suite, an optimal global sequence aligner based on the Needleman-Wunsch algorithm that can easily accounts for gaps. Finally, after analyzing the aligned reads, a set of informative graphs are generated, allowing for the quantification and visualization of the position and type of outcomes within the amplicon sequence.
+The reads are first filtered based on the quality score ([phred33](https://en.wikipedia.org/wiki/Phred_quality_score)) in order to remove potentially false positive indels. The filtering based on the phred33 quality score can be modulated by adjusting the optimal parameters (see additional notes below). The adapters are trimmed from the reads using Trimmomatic and then sequences are merged with FLASha (if using paired-end data).The remaining reads are then aligned with needle from the EMBOSS suite, an optimal global sequence aligner based on the Needleman-Wunsch algorithm that can easily accounts for gaps. Finally, after analyzing the aligned reads, a set of informative graphs are generated, allowing for the quantification and visualization of the position and type of outcomes within the amplicon sequence.
 
 NHEJ events:
 
 The required inputs are: 
 
-- Two files for paired-end reads or a single file for single-end reads in fastq format (fastq.gz files are also accepted). The reads are assumed to be already trimmed for adapters. If reads are not trimmed, please use the   --trim_sequences option and the   --trimmomatic_options_string  if you are using an adapter different than Nextera. 
+- Two files for paired-end reads or a single file for single-end reads in fastq format (`fastq.gz` files are also accepted). The reads are assumed to be already trimmed for adapters. If reads are not trimmed, please use the   --trim_sequences option and the   --trimmomatic_options_string  if you are using an adapter different than Nextera. 
 - The reference amplicon sequence must also be provided.
 
 Example:
@@ -110,7 +109,7 @@ CRISPResso -r1 reads1.fastq.gz -r2 reads2.fastq.gz -a AATGTCCCCCAATGGGAAGTTCATCT
 HDR events:
 The required inputs are: 
 
-- Two files for paired-end reads or a single file for single-end reads in fastq format (fastq.gz files are also accepted). The reads are assumed to be already trimmed for adapters.
+- Two files for paired-end reads or a single file for single-end reads in fastq format (`fastq.gz` files are also accepted). The reads are assumed to be already trimmed for adapters.
 - The reference amplicon sequence.
 - The expected amplicon sequence after HDR must also be provided.
 
@@ -234,44 +233,39 @@ Specify the number of processes to use for the quantification.  This parameter i
 
 In order to help you to familiarize with the output of CRISPResso we provide several precomputed analyses, using the standard settings, for different simulated sequencing datasets with sequencing artifact modeled after the Illumina Miseq platform (using the ART simulation tool: http://www.niehs.nih.gov/research/resources/software/biostatistics/art/ ) and with known editing efficiency and mutagenesis profile:
 
-1) 1000 unmodified reads: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_unmodified_amplicon_MISEQ_ERROR_WINDOW_1bp.zip
+1. 1000 unmodified reads: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_unmodified_amplicon_MISEQ_ERROR_WINDOW_1bp.zip
 
-2) 1000 unmodified reads, 1000 reads with 1 substitution: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_1_substitution_MISEQ_ERROR_WINDOW_1bp.zip
+2. 1000 unmodified reads, 1000 reads with 1 substitution: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_1_substitution_MISEQ_ERROR_WINDOW_1bp.zip
 
-3) 1000 unmodified reads, 1000 reads with 2 substitutions: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_2_substitution_MISEQ_ERROR_WINDOW_1bp.zip
+3. 1000 unmodified reads, 1000 reads with 2 substitutions: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_2_substitution_MISEQ_ERROR_WINDOW_1bp.zip
 
-4) 1000 unmodified reads, 1000 reads with 3 substitutions: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_3_substitution_MISEQ_ERROR_WINDOW_1bp.zip
+4. 1000 unmodified reads, 1000 reads with 3 substitutions: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_3_substitution_MISEQ_ERROR_WINDOW_1bp.zip
 
-5) 1000 unmodified reads, 1000 reads with an insertion of 5 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_5_ins_MISEQ_ERROR_WINDOW_1bp.zip
+5. 1000 unmodified reads, 1000 reads with an insertion of 5 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_5_ins_MISEQ_ERROR_WINDOW_1bp.zip
 
-6) 1000 unmodified reads, 1000 reads with an insertion of 10 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_10_ins_MISEQ_ERROR_WINDOW_1bp.zip
+6. 1000 unmodified reads, 1000 reads with an insertion of 10 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_10_ins_MISEQ_ERROR_WINDOW_1bp.zip
 
-7) 1000 unmodified reads, 1000 reads with an insertion of 50 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_50_ins_MISEQ_ERROR_WINDOW_1bp.zip
+7. 1000 unmodified reads, 1000 reads with an insertion of 50 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_50_ins_MISEQ_ERROR_WINDOW_1bp.zip
 
-8) 1000 unmodified reads, 1000 reads with a deletion of 5 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_5_del_MISEQ_ERROR_WINDOW_1bp.zip
+8. 1000 unmodified reads, 1000 reads with a deletion of 5 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_5_del_MISEQ_ERROR_WINDOW_1bp.zip
 
-9) 1000 unmodified reads, 1000 reads with a deletion of 10 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_10_del_MISEQ_ERROR_WINDOW_1bp.zip
+9. 1000 unmodified reads, 1000 reads with a deletion of 10 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_10_del_MISEQ_ERROR_WINDOW_1bp.zip
 
-10) 1000 unmodified reads, 1000 reads with a deletion of 50 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_50_del_MISEQ_ERROR_WINDOW_1bp.zip
-
+10. 1000 unmodified reads, 1000 reads with a deletion of 50 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_50_del_MISEQ_ERROR_WINDOW_1bp.zip
 
 ## Installation and usage of CRISPRessoPooled
 
-CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving sequencing libraries with pooled amplicons. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with
-regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a
-single reaction. These reactions are then quantified, normalized, pooled, and undergo quality control before being sequenced).
-CRISPRessoPooled demultiplexes reads from multiple amplicons and runs the CRISPResso utility with appropriate reads for each amplicon separately.
+CRISPRessoPooled is a utility to analyze and quantify targeted sequencing CRISPR/Cas9 experiments involving sequencing libraries with pooled amplicons. One common experimental strategy is to pool multiple amplicons (e.g. a single on-target site plus a set of potential off-target sites) into a single deep sequencing reaction (briefly, genomic DNA samples for pooled applications can be prepared by first amplifying the target regions for each gene/target of interest with regions of 150-400bp depending on the desired coverage. In a second round of PCR, with minimized cycle numbers, barcode and adaptors are added. With optimization, these two rounds of PCR can be merged into a single reaction. These reactions are then quantified, normalized, pooled, and undergo quality control before being sequenced). CRISPRessoPooled demultiplexes reads from multiple amplicons and runs the CRISPResso utility with appropriate reads for each amplicon separately.
 
 **Installation**
 
-CRISPRessoPooled is installed automatically during the installation of
-CRISPResso, but to use it two additional programs must be installed:
+CRISPRessoPooled is installed automatically during the installation of CRISPResso, but to use it two additional programs must be installed:
 
--   samtools: http://samtools.sourceforge.net/
+- samtools: http://samtools.sourceforge.net/
 
--   bowtie2: http://bowtie-bio.sourceforge.net/bowtie2
+- bowtie2: http://bowtie-bio.sourceforge.net/bowtie2
 
-    To install these tools please refer to their documentation.
+To install these tools please refer to their documentation.
 
 **Usage**
 
