@@ -13,12 +13,12 @@ CRISPResso is a software pipeline for the analysis of targeted CRISPR-Cas9 seque
 
 CRISPResso automatizes and performs the following steps summarized in the figure below: 
 
-1. filters low quality reads, 
-2. trims adapters, 
-3. aligns the reads to a reference amplicon, 
-4. quantifies the proportion of HDR and NHEJ outcomes, 
-5. quantifies frameshift/inframe mutations (if applicable) and identifies affected splice sites,
-6. produces a graphical report to visualize and quantify the indels distribution and position.
++ filters low quality reads, 
++ trims adapters, 
++ aligns the reads to a reference amplicon, 
++ quantifies the proportion of HDR and NHEJ outcomes, 
++ quantifies frameshift/inframe mutations (if applicable) and identifies affected splice sites,
++ produces a graphical report to visualize and quantify the indels distribution and position.
 
 ![CRISPResso pipeline](https://github.com/tonyreina/CRISPResso/blob/master/CRISPResso_pipeline.png)
 
