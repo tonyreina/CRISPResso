@@ -11,6 +11,8 @@ https://github.com/lucapinello/CRISPResso
 __version__ = "1.1.0"
 
 from ast import fix_missing_locations
+from code import interact
+from typing import List
 import sys
 import errno
 import os
@@ -49,19 +51,19 @@ info = logging.info
 _ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def get_data(path):
+def get_data(path: str) -> str:
     return os.path.join(_ROOT, "data", path)
 
 
-def check_library(library_name):
+def check_library(library_name: str):
     try:
         return __import__(library_name)
-    except:
-        error("You need to install %s module to use CRISPResso!" % library_name)
+    except Exception as exc:
+        error(f"{exc}: You need to install {library_name} module to use CRISPResso!")
         sys.exit(1)
 
 
-def which(program):
+def which(program: str):
     import os
 
     def is_exe(fpath):
@@ -81,18 +83,19 @@ def which(program):
     return None
 
 
-def check_program(binary_name, download_url=None):
+def check_program(binary_name: str, download_url: str = None):
     if not which(binary_name):
         error(
-            "You need to install and have the command #####%s##### in your PATH variable to use CRISPResso!\n Please read the documentation!"
-            % binary_name
+            "You need to install and have the command"
+            f" #####{binary_name}##### in your PATH "
+            "variable to use CRISPResso!\n Please read the documentation!"
         )
         if download_url:
             error("You can download it from here:%s" % download_url)
         sys.exit(1)
 
 
-def check_file(filename):
+def check_file(filename: str):
     try:
         with open(filename):
             pass
@@ -100,7 +103,7 @@ def check_file(filename):
         raise Exception("I cannot open the file: " + filename)
 
 
-def force_symlink(src, dst):
+def force_symlink(src: str, dst: str) -> None:
 
     if os.path.exists(dst) and os.path.samefile(src, dst):
         return
@@ -118,15 +121,17 @@ nt_complement = dict(
 )
 
 
-def reverse_complement(seq):
+def reverse_complement(seq: str) -> str:
     return "".join([nt_complement[c] for c in seq.upper()[-1::-1]])
 
 
-def find_wrong_nt(sequence):
+def find_wrong_nt(sequence: str):
     return list(set(sequence.upper()).difference(set(["A", "T", "C", "G", "N"])))
 
 
-def get_ids_reads_to_remove(fastq_filename, min_bp_quality=20, min_single_bp_quality=0):
+def get_ids_reads_to_remove(
+    fastq_filename: str, min_bp_quality: int = 20, min_single_bp_quality: interact = 0
+) -> List[str]:
     ids_to_remove = set()
     if fastq_filename.endswith(".gz"):
         fastq_handle = gzip.open(fastq_filename, "rt")
@@ -145,13 +150,13 @@ def get_ids_reads_to_remove(fastq_filename, min_bp_quality=20, min_single_bp_qua
 
 
 def filter_pe_fastq_by_qual(
-    fastq_r1,
-    fastq_r2,
-    output_filename_r1=None,
-    output_filename_r2=None,
-    min_bp_quality=20,
-    min_single_bp_quality=0,
-):
+    fastq_r1: str,
+    fastq_r2: str,
+    output_filename_r1: str = None,
+    output_filename_r2: str = None,
+    min_bp_quality: int = 20,
+    min_single_bp_quality: int = 0,
+) -> (str, str):
 
     ids_to_remove_s1 = get_ids_reads_to_remove(
         fastq_r1,
@@ -209,7 +214,10 @@ def filter_pe_fastq_by_qual(
 
 
 def filter_se_fastq_by_qual(
-    fastq_filename, output_filename=None, min_bp_quality=20, min_single_bp_quality=0
+    fastq_filename: str,
+    output_filename=None,
+    min_bp_quality: int = 20,
+    min_single_bp_quality: int = 0,
 ):
 
     if fastq_filename.endswith(".gz"):
@@ -346,7 +354,7 @@ class NoReadsAfterQualityFiltering(Exception):
 #########################################
 
 
-def process_df_chunk(df_needle_alignment_chunk):
+def process_df_chunk(df_needle_alignment_chunk: pd.DataFrame):
 
     MODIFIED_FRAMESHIFT = 0
     MODIFIED_NON_FRAMESHIFT = 0
@@ -1121,7 +1129,7 @@ def main():
         print("  \n~~~CRISPResso~~~")
         print("-Analysis of CRISPR/Cas9 outcomes from deep sequencing data-")
         print(
-            """
+            r"""
                       )
                      (
                     __)__
@@ -1131,7 +1139,8 @@ def main():
              """
         )
         print(
-            "\n[Luca Pinello 2015, send bugs, suggestions or *green coffee* to lucapinello AT gmail DOT com]\n\n"
+            "\n[Luca Pinello 2015, send bugs, suggestions or "
+            "*green coffee* to lucapinello AT gmail DOT com]\n\n"
         ),
 
         print("Version %s\n" % __version__)
@@ -3793,62 +3802,56 @@ def main():
             )
 
         nhej_inserted = np.sum(
-            df_needle_alignment.loc[df_needle_alignment.NHEJ, "n_inserted"] > 0
+            df_needle_alignment[df_needle_alignment["NHEJ"] == True]["n_inserted"] > 0
         )
-
-        # Initially set to NaN
-        # Then use if-then to calculate values
-        nhej_deleted = np.nan
-        nhej_mutated = np.nan
-
-        hdr_inserted = np.nan
-        hdr_deleted = np.nan
-        hdr_mutated = np.nan
-
-        mixed_inserted = np.nan
-        mixed_deleted = np.nan
-        mixed_mutated = np.nan
-
         if np.isnan(nhej_inserted):
             nhej_inserted = 0
-            nhej_deleted = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.NHEJ, "n_deleted"] > 0
-            )
+
+        nhej_deleted = np.sum(
+            df_needle_alignment[df_needle_alignment["NHEJ"] == True]["n_deleted"] > 0
+        )
         if np.isnan(nhej_deleted):
             nhej_deleted = 0
-            nhej_mutated = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.NHEJ, "n_mutated"] > 0
-            )
+
+        nhej_mutated = np.sum(
+            df_needle_alignment[df_needle_alignment["NHEJ"] == True]["n_mutated"] > 0
+        )
         if np.isnan(nhej_mutated):
             nhej_mutated = 0
-            hdr_inserted = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.HDR, "n_inserted"] > 0
-            )
+
+        hdr_inserted = np.sum(
+            df_needle_alignment[df_needle_alignment["HDR"] == True]["n_inserted"] > 0
+        )
         if np.isnan(hdr_inserted):
             hdr_inserted = 0
-            hdr_deleted = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.HDR, "n_deleted"] > 0
-            )
+
+        hdr_deleted = np.sum(
+            df_needle_alignment[df_needle_alignment["HDR"] == True]["n_deleted"] > 0
+        )
         if np.isnan(hdr_deleted):
             hdr_deleted = 0
-            hdr_mutated = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.HDR, "n_mutated"] > 0
-            )
+
+        hdr_mutated = np.sum(
+            df_needle_alignment[df_needle_alignment["HDR"] == True]["n_mutated"] > 0
+        )
         if np.isnan(hdr_mutated):
             hdr_mutated = 0
-            mixed_inserted = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.MIXED, "n_inserted"] > 0
-            )
+
+        mixed_inserted = np.sum(
+            df_needle_alignment[df_needle_alignment["MIXED"] == True]["n_inserted"] > 0
+        )
         if np.isnan(mixed_inserted):
             mixed_inserted = 0
-            mixed_deleted = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.MIXED, "n_deleted"] > 0
-            )
+
+        mixed_deleted = np.sum(
+            df_needle_alignment[df_needle_alignment["MIXED"] == True]["n_deleted"] > 0
+        )
         if np.isnan(mixed_deleted):
             mixed_deleted = 0
-            mixed_mutated = np.sum(
-                df_needle_alignment.loc[df_needle_alignment.MIXED, "n_mutated"] > 0
-            )
+
+        mixed_mutated = np.sum(
+            df_needle_alignment[df_needle_alignment["MIXED"] == True]["n_mutated"] > 0
+        )
         if np.isnan(mixed_mutated):
             mixed_mutated = 0
 
@@ -3881,28 +3884,26 @@ def main():
         # write statistics
         with open(_jp("Mapping_statistics.txt"), "wt") as outfile:
             outfile.write(
-                "READS IN INPUTS:%d\nREADS AFTER PREPROCESSING:%d\nREADS ALIGNED:%d"
-                % (N_READS_INPUT, N_READS_AFTER_PREPROCESSING, N_TOTAL)
+                f"READS IN INPUTS:{N_READS_INPUT}\n"
+                f"READS AFTER PREPROCESSING:{N_READS_AFTER_PREPROCESSING}"
+                f"\nREADS ALIGNED:{N_TOTAL}"
             )
 
         if PERFORM_FRAMESHIFT_ANALYSIS:
             with open(_jp("Frameshift_analysis.txt"), "wt") as outfile:
                 outfile.write(
-                    "Frameshift analysis:\n\tNoncoding mutation:%d reads\n\tIn-frame mutation:%d reads\n\tFrameshift mutation:%d reads\n"
-                    % (
-                        NON_MODIFIED_NON_FRAMESHIFT,
-                        MODIFIED_NON_FRAMESHIFT,
-                        MODIFIED_FRAMESHIFT,
-                    )
+                    "Frameshift analysis:\n\t"
+                    f"Noncoding mutation:{NON_MODIFIED_NON_FRAMESHIFT} reads\n\t"
+                    f"In-frame mutation:{MODIFIED_NON_FRAMESHIFT} reads\n\t"
+                    f"Frameshift mutation:{MODIFIED_FRAMESHIFT} reads\n"
                 )
 
             with open(_jp("Splice_sites_analysis.txt"), "wt") as outfile:
+                unmodified = df_needle_alignment.shape[0] - SPLICING_SITES_MODIFIED
                 outfile.write(
-                    "Splice sites analysis:\n\tUnmodified:%d reads\n\tPotential splice sites modified:%d reads\n"
-                    % (
-                        df_needle_alignment.shape[0] - SPLICING_SITES_MODIFIED,
-                        SPLICING_SITES_MODIFIED,
-                    )
+                    "Splice sites analysis:\n\t"
+                    f"Unmodified:{unmodified} reads\n\t"
+                    "Potential splice sites modified:{SPLICING_SITES_MODIFIED} reads\n"
                 )
 
             save_vector_to_file(
@@ -4011,7 +4012,7 @@ def main():
 
         info("All Done!")
         print(
-            """
+            r"""
                   )
                  (
                 __)__
@@ -4023,65 +4024,65 @@ def main():
 
         sys.exit(0)
 
-    except NTException as e:
+    except NTException as exc:
         print_stacktrace_if_debug()
-        error("Alphabet error, please check your input.\n\nERROR: %s" % e)
+        error(f"Alphabet error, please check your input.\n\nERROR: {exc}")
         sys.exit(1)
-    except SgRNASequenceException as e:
+    except SgRNASequenceException as exc:
         print_stacktrace_if_debug()
-        error("sgRNA error, please check your input.\n\nERROR: %s" % e)
+        error("sgRNA error, please check your input.\n\nERROR: {exc}")
         sys.exit(2)
-    except DonorSequenceException as e:
+    except DonorSequenceException as exc:
         print_stacktrace_if_debug()
         error(
-            "Problem with the expected hdr amplicon sequence parameter, please check your input.\n\nERROR: %s"
-            % e
+            "Problem with the expected hdr amplicon sequence parameter, "
+            f"please check your input.\n\nERROR: exc"
         )
         sys.exit(3)
-    except TrimmomaticException as e:
+    except TrimmomaticException as exc:
         print_stacktrace_if_debug()
-        error("Trimming error, please check your input.\n\nERROR: %s" % e)
+        error("Trimming error, please check your input.\n\nERROR: {exc}")
         sys.exit(4)
-    except FlashException as e:
+    except FlashException as exc:
         print_stacktrace_if_debug()
-        error("Merging error, please check your input.\n\nERROR: %s" % e)
+        error("Merging error, please check your input.\n\nERROR: {exc}")
         sys.exit(5)
-    except NeedleException as e:
+    except NeedleException as exc:
         print_stacktrace_if_debug()
-        error("Alignment error, please check your input.\n\nERROR: %s" % e)
+        error("Alignment error, please check your input.\n\nERROR: {exc}")
         sys.exit(6)
-    except NoReadsAlignedException as e:
+    except NoReadsAlignedException as exc:
         print_stacktrace_if_debug()
-        error("Alignment error, please check your input.\n\nERROR: %s" % e)
+        error("Alignment error, please check your input.\n\nERROR: {exc}")
         sys.exit(7)
-    except AmpliconEqualDonorException as e:
+    except AmpliconEqualDonorException as exc:
         print_stacktrace_if_debug()
         error(
-            "Problem with the expected hdr amplicon sequence parameter, please check your input.\n\nERROR: %s"
-            % e
+            "Problem with the expected hdr amplicon sequence parameter, "
+            f"please check your input.\n\nERROR: {exc}"
         )
         sys.exit(8)
-    except CoreDonorSequenceNotContainedException as e:
+    except CoreDonorSequenceNotContainedException as exc:
         print_stacktrace_if_debug()
-        error("Donor sequence error, please check your input.\n\nERROR: %s" % e)
+        error(f"Donor sequence error, please check your input.\n\nERROR: {exc}")
         sys.exit(9)
-    except CoreDonorSequenceNotUniqueException as e:
+    except CoreDonorSequenceNotUniqueException as exc:
         print_stacktrace_if_debug()
-        error("Donor sequence error, please check your input.\n\nERROR: %s" % e)
+        error(f"Donor sequence error, please check your input.\n\nERROR: {exc}")
         sys.exit(10)
-    except ExonSequenceException as e:
+    except ExonSequenceException as exc:
         print_stacktrace_if_debug()
-        error("Coding sequence error, please check your input.\n\nERROR: %s" % e)
+        error(f"Coding sequence error, please check your input.\n\nERROR: {exc}")
         sys.exit(11)
-    except DuplicateSequenceIdException as e:
+    except DuplicateSequenceIdException as exc:
         print_stacktrace_if_debug()
-        error("Fastq file error, please check your input.\n\nERROR: %s" % e)
+        error(f"Fastq file error, please check your input.\n\nERROR: {exc}")
         sys.exit(12)
-    except NoReadsAfterQualityFiltering as e:
+    except NoReadsAfterQualityFiltering as exc:
         print_stacktrace_if_debug()
-        error("Filtering error, please check your input.\n\nERROR: %s" % e)
+        error(f"Filtering error, please check your input.\n\nERROR:{exc}")
         sys.exit(13)
-    except Exception as e:
+    except Exception as exc:
         print_stacktrace_if_debug()
-        error("Unexpected error, please check your input.\n\nERROR: %s" % e)
+        error(f"Unexpected error, please check your input.\n\nERROR: {exc}")
         sys.exit(-1)
