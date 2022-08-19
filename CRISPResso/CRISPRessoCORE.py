@@ -10,6 +10,7 @@ https://github.com/lucapinello/CRISPResso
 
 __version__ = "1.1.0"
 
+from ast import fix_missing_locations
 import sys
 import errno
 import os
@@ -23,10 +24,13 @@ import pickle as cp
 import unicodedata
 import traceback
 
+import datetime
 
 import logging
 
 from pyparsing import lineStart
+
+from matplotlib.backends.backend_pdf import PdfPages
 
 logging.basicConfig(
     level=logging.INFO,
@@ -860,7 +864,7 @@ def custom_heatmap(
     xticklabels=True,
     yticklabels=True,
     mask=None,
-    **kwargs
+    **kwargs,
 ):
 
     # Initialize the plotter object
@@ -931,7 +935,7 @@ def plot_alleles_table(
     lines = defaultdict(list)
 
     re_find_indels = re.compile("(-*-)")
-    
+
     per_element_annot_kws = []
     idx_row = 0
 
@@ -971,7 +975,7 @@ def plot_alleles_table(
     per_element_annot_kws = np.vstack(per_element_annot_kws[::-1])
     ref_seq_hm = np.expand_dims(seq_to_numbers(ref_seq_around_cut), 1).T
     ref_seq_annot_hm = np.expand_dims(list(ref_seq_around_cut), 1).T
-    
+
     annot = annot[::-1]
     X = X[::-1]
 
@@ -1971,7 +1975,7 @@ def main():
 
         else:
             df_needle_alignment = parse_needle_output(needle_output_filename, "ref")
-            
+
             N_TOTAL_ALSO_UNALIGNED = df_needle_alignment.shape[0] * 1.0
 
             sr_not_aligned = df_needle_alignment.loc[
@@ -2120,7 +2124,9 @@ def main():
             )
 
             # append the RC reads to the aligned reads in the original orientation
-            df_needle_alignment = pd.concat([df_needle_alignment, df_needle_alignment_rc])
+            df_needle_alignment = pd.concat(
+                [df_needle_alignment, df_needle_alignment_rc]
+            )
 
             del df_needle_alignment_rc
 
@@ -2363,7 +2369,7 @@ def main():
         # disable known division warning
         with np.errstate(divide="ignore", invalid="ignore"):
 
-            effect_vector_combined = 100. * effect_vector_any / float(N_TOTAL)
+            effect_vector_combined = 100.0 * effect_vector_any / float(N_TOTAL)
 
             avg_vector_ins_all /= (
                 effect_vector_insertion
@@ -2436,7 +2442,7 @@ def main():
             inplace=True,
         )
         # df_alleles.set_index('Aligned_Sequence',inplace=True)
-        df_alleles["%Reads"] = df_alleles["#Reads"] / df_alleles["#Reads"].sum() * 100.
+        df_alleles["%Reads"] = df_alleles["#Reads"] / df_alleles["#Reads"].sum() * 100.0
 
         df_alleles.sort_values(by="#Reads", ascending=False, inplace=True)
 
@@ -2450,6 +2456,7 @@ def main():
         info("Done!")
 
         info("Making Plots...")
+
         # plot effective length
         if args.guide_seq:
             min_cut = min(cut_points)
@@ -2496,17 +2503,21 @@ def main():
                 _jp("1a.Indel_size_distribution_n_sequences.png"), bbox_inches="tight"
             )
 
+        pdf = PdfPages(_jp(f"crispresso_report_for_{database_id}.pdf"))
+
+        pdf.savefig()  # saves the current figure into a pdf page
+
         plt.figure(figsize=(8.3, 8))
         plt.bar(
             0,
-            hdensity[center_index] / (float(hdensity.sum())) * 100.,
+            hdensity[center_index] / (float(hdensity.sum())) * 100.0,
             color="red",
             linewidth=0,
         )
         # plt.hold(True)
         barlist = plt.bar(
             hlengths,
-            hdensity / (float(hdensity.sum())) * 100.,
+            hdensity / (float(hdensity.sum())) * 100.0,
             align="center",
             linewidth=0,
         )
@@ -2534,6 +2545,8 @@ def main():
             plt.savefig(
                 _jp("1b.Indel_size_distribution_percentage.png"), bbox_inches="tight"
             )
+
+        pdf.savefig()  # saves the current figure into a pdf page
 
         ####PIE CHARTS FOR HDR/NHEJ/MIXED/EVENTS###
 
@@ -2699,6 +2712,9 @@ def main():
                     bbox_inches="tight",
                 )
 
+        pdf.attach_note("Unmodified NEHJ pie chart")
+        pdf.savefig()  # saves the current figure into a pdf page
+
         ###############################################################################################################################################
 
         ###############################################################################################################################################
@@ -2837,6 +2853,8 @@ def main():
                 bbox_inches="tight",
             )
 
+        pdf.savefig()  # saves the current figure into a pdf page
+
         # (4) another graph with the frequency that each nucleotide within the amplicon was modified in any way (perhaps would consider insertion as modification of the flanking nucleotides);
 
         # Indels location Plots
@@ -2933,6 +2951,8 @@ def main():
                 bbox_inches="tight",
                 pad=1,
             )
+
+        pdf.savefig()  # saves the current figure into a pdf page
 
         # NHEJ
         plt.figure(figsize=(10, 10))
@@ -3037,6 +3057,8 @@ def main():
                 pad=1,
             )
 
+        pdf.savefig()  # saves the current figure into a pdf page
+
         if args.expected_hdr_amplicon_seq:
 
             # HDR
@@ -3116,8 +3138,8 @@ def main():
                 [
                     "%.1f%% (%.1f%% , %d)"
                     % (
-                        n_reads / float(N_TOTAL) * 100.,
-                        n_reads / float(N_REPAIRED) * 100.,
+                        n_reads / float(N_TOTAL) * 100.0,
+                        n_reads / float(N_REPAIRED) * 100.0,
                         n_reads,
                     )
                     for n_reads in y_label_values
@@ -3125,7 +3147,9 @@ def main():
             )
             plt.xticks(
                 np.arange(
-                    0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
+                    0,
+                    len_amplicon,
+                    max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5),
                 ).astype(int)
             )
 
@@ -3146,6 +3170,8 @@ def main():
                     bbox_inches="tight",
                     pad=1,
                 )
+
+            pdf.savefig()  # saves the current figure into a pdf page
 
             # MIXED
             plt.figure(figsize=(10, 10))
@@ -3224,8 +3250,8 @@ def main():
                 [
                     "%.1f%% (%.1f%% , %d)"
                     % (
-                        n_reads / float(N_TOTAL) * 100.,
-                        n_reads / float(N_MIXED_HDR_NHEJ) * 100.,
+                        n_reads / float(N_TOTAL) * 100.0,
+                        n_reads / float(N_MIXED_HDR_NHEJ) * 100.0,
                         n_reads,
                     )
                     for n_reads in y_label_values
@@ -3233,7 +3259,9 @@ def main():
             )
             plt.xticks(
                 np.arange(
-                    0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
+                    0,
+                    len_amplicon,
+                    max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5),
                 ).astype(int)
             )
 
@@ -3256,23 +3284,21 @@ def main():
                     bbox_inches="tight",
                     pad=1,
                 )
+            pdf.savefig()  # saves the current figure into a pdf page
 
-        
         # Position dependent indels plot
         fig = plt.figure(figsize=(24, 10))
         ax1 = fig.add_subplot(1, 2, 1)
-        
-        markerline, stemlines, baseline = ax1.stem(
-            avg_vector_ins_all, markerfmt="s"
-        )
- 
+
+        markerline, stemlines, baseline = ax1.stem(avg_vector_ins_all, markerfmt="s")
+
         plt.setp(markerline, "markerfacecolor", "r", "markersize", 8)
         plt.setp(baseline, "linewidth", 0)
         plt.setp(stemlines, "color", "r", "linewidth", 3)
 
         # plt.hold(True)
         y_max = max(avg_vector_ins_all) * 1.2
-        
+
         if cut_points:
 
             for idx, cut_point in enumerate(cut_points):
@@ -3307,9 +3333,7 @@ def main():
         plt.tight_layout()
 
         ax2 = fig.add_subplot(1, 2, 2)
-        markerline, stemlines, baseline = ax2.stem(
-            avg_vector_del_all, markerfmt="s"
-        )
+        markerline, stemlines, baseline = ax2.stem(avg_vector_del_all, markerfmt="s")
         plt.setp(markerline, "markerfacecolor", "m", "markersize", 8)
         plt.setp(baseline, "linewidth", 0)
         plt.setp(stemlines, "color", "m", "linewidth", 3)
@@ -3348,7 +3372,7 @@ def main():
         ax2.set_title("Position dependent deletion size")
 
         plt.tight_layout()
-            
+
         plt.savefig(
             _jp("4e.Position_dependent_average_indel_size.pdf"),
             bbox_extra_artists=(lgd,),
@@ -3360,7 +3384,9 @@ def main():
                 bbox_extra_artists=(lgd,),
                 bbox_inches="tight",
             )
-            
+
+        pdf.savefig()  # saves the current figure into a pdf page
+
         if PERFORM_FRAMESHIFT_ANALYSIS:
             # make frameshift plots
             fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
@@ -3384,7 +3410,7 @@ def main():
                 ],
                 autopct="%1.1f%%",
             )
-            
+
             ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
             ax2.plot([0, len_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence")
             # plt.hold(True)
@@ -3445,6 +3471,8 @@ def main():
                     pad_inches=1,
                     bbox_inches="tight",
                 )
+
+            pdf.savefig()  # saves the current figure into a pdf page
 
             # profiles-----------------------------------------------------------------------------------
             fig = plt.figure(figsize=(22, 10))
@@ -3513,6 +3541,8 @@ def main():
                     bbox_inches="tight",
                 )
 
+            pdf.savefig()  # saves the current figure into a pdf page
+
             # -----------------------------------------------------------------------------------------------------------
             fig = plt.figure(figsize=(12 * 1.5, 12 * 1.5))
             ax = fig.add_subplot(1, 1, 1)
@@ -3549,6 +3579,8 @@ def main():
                     pad_inches=1,
                     bbox_inches="tight",
                 )
+
+            pdf.savefig()  # saves the current figure into a pdf page
 
             # non coding
             plt.figure(figsize=(10, 10))
@@ -3621,7 +3653,9 @@ def main():
             )
             plt.xticks(
                 np.arange(
-                    0, len_amplicon, max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5)
+                    0,
+                    len_amplicon,
+                    max(3, (len_amplicon // 6) - (len_amplicon // 6) % 5),
                 ).astype(int)
             )
 
@@ -3641,6 +3675,8 @@ def main():
                     bbox_extra_artists=(lgd,),
                     bbox_inches="tight",
                 )
+
+        pdf.savefig()  # saves the current figure into a pdf page
 
         ##new plots alleles around cut_sites
         for sgRNA, cut_point in zip(sgRNA_sequences, cut_points):
@@ -3665,6 +3701,15 @@ def main():
                 MAX_N_ROWS=args.max_rows_alleles_around_cut_to_plot,
             )
 
+            pdf.savefig()
+
+        # We can also set the file's metadata via the PdfPages object:
+        d = pdf.infodict()
+        d["Title"] = f"CRISPResso Report for {database_id}"
+        d["Subject"] = f"Collated results from CRISPResso {database_id}"
+        d["Keywords"] = "CRISPResso Amplicon NGS CRISPR 'Gene Therapy'"
+        d["CreationDate"] = datetime.datetime.today()
+        pdf.close()
         info("Done!")
 
         if not args.keep_intermediate:

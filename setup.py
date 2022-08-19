@@ -6,6 +6,9 @@ Setup script for CRISPResso -- Software pipeline for the analysis of CRISPR-Cas9
 @author:  Luca Pinello
 @updater:  Tony Reina
 @contact: tbreina@bu.edu
+
+python setup.py bdist_wheel
+
 """
 
 import os
