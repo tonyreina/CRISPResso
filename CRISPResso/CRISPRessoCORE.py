@@ -240,7 +240,7 @@ def filter_se_fastq_by_qual(
     return output_filename
 
 
-def get_avg_read_lenght_fastq(fastq_filename):
+def get_average_read_length_fastq(fastq_filename):
     cmd = (
         ("z" if fastq_filename.endswith(".gz") else "")
         + ("cat < %s" % fastq_filename)
@@ -1733,7 +1733,7 @@ def main():
 
             info("Estimating average read length...")
             if get_n_reads_fastq(output_forward_paired_filename):
-                avg_read_length = get_avg_read_lenght_fastq(
+                avg_read_length = get_average_read_length_fastq(
                     output_forward_paired_filename
                 )
                 std_fragment_length = int(len_amplicon * 0.1)
