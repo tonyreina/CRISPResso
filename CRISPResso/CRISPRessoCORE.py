@@ -3,11 +3,10 @@
 
 """
 CRISPResso - Luca Pinello 2015
-Software pipeline for the analysis of CRISPR-Cas9 genome editing outcomes from deep sequencing data
+Software pipeline for the analysis of CRISPR-Cas9 genome 
+editing outcomes from deep sequencing data
 https://github.com/lucapinello/CRISPResso
 """
-# CRISPResso -r1 base_editor.fastq -a GGCCCCAGTGGCTGCTCTGGGGGCCTCCTGAGTTTCTCATCTGTGCCCCTCCCTCCCTGGCCCAGGTGAAGGTGTGGTTCCAGAACCGGAGGACAAAGTACAAACGGCAGAAGCTGGAGGAGGAAGGGCCTGAGTCCGAGCAGAAGAAGAAGGGCTCCCATCACATCAACCGGTGGCGCATTGCCACGAAGCAGGCCAATGGGGAGGACATCGATGTCACCTCCAATGACTAGGGTGG -g GAGTCCGAGCAGAAGAAGAA
-
 __version__ = "1.1.0"
 
 from ast import fix_missing_locations
@@ -59,8 +58,7 @@ def check_library(library_name: str):
     try:
         return __import__(library_name)
     except Exception as exc:
-        error(f"{exc}: You need to install {library_name} module to use CRISPResso!")
-        sys.exit(1)
+        raise Exception(f"You need to install {library_name} to use CRISPResso!")
 
 
 def which(program: str):
@@ -85,14 +83,15 @@ def which(program: str):
 
 def check_program(binary_name: str, download_url: str = None):
     if not which(binary_name):
-        error(
+        raise Exception(
             "You need to install and have the command"
             f" #####{binary_name}##### in your PATH "
             "variable to use CRISPResso!\n Please read the documentation!"
         )
         if download_url:
-            error("You can download it from here:%s" % download_url)
-        sys.exit(1)
+            error(f"You can download it from here: {download_url}")
+
+    return True
 
 
 def check_file(filename: str):
@@ -295,9 +294,6 @@ sns.set_style("white")
 
 from Bio import SeqIO, pairwise2
 
-#########################################
-
-
 ###EXCEPTIONS############################
 class FlashException(Exception):
     pass
@@ -439,7 +435,8 @@ def process_df_chunk(chunk_input):
         if not args.ignore_insertions:
             for p in re_find_indels.finditer(row.ref_seq):
                 st, en = p.span()
-                # ref_st=row.ref_positions[st-1] # we report the base preceding the insertion
+                # ref_st=row.ref_positions[st-1]
+                # # we report the base preceding the insertion
 
                 # insertion_positions.append(ref_st)
                 insertion_positions.append(
@@ -678,13 +675,25 @@ def add_hist(hist_to_add, hist_global):
     return hist_global
 
 
-def slugify(value):  # adapted from the Django project
-
-    value = unicodedata.normalize("NFKD", unicode(value)).encode("ascii", "ignore")
-    value = unicode(re.sub(r"[^\w\s-]", "_", value).strip())
-    value = unicode(re.sub(r"[-\s]+", "-", value))
-
-    return str(value)
+def slugify(value, allow_unicode=False):  # adapted from the Django project
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize("NFKC", value)
+    else:
+        value = (
+            unicodedata.normalize("NFKD", value)
+            .encode("ascii", "ignore")
+            .decode("ascii")
+        )
+    value = re.sub(r"[^\w\s-]", "", value.lower())
+    return re.sub(r"[-\s]+", "-", value).strip("-_")
 
 
 def split_paired_end_reads_single_file(
@@ -790,7 +799,7 @@ class Custom_HeatMapper(sns.matrix._HeatMapper):
 
         if annot is not None:
             if per_element_annot_kws is None:
-                self.per_element_annot_kws = np.empty_like(annot, dtype=np.object)
+                self.per_element_annot_kws = np.empty_like(annot, dtype=object)
                 self.per_element_annot_kws[:] = dict()
             else:
                 self.per_element_annot_kws = per_element_annot_kws
@@ -975,7 +984,7 @@ def plot_alleles_table(
             and (row["Reference_Sequence"][i_sub] != "-")
             and (idx[i_sub] != "-")
         ]
-        to_append = np.array([{}] * len(idx), dtype=np.object)
+        to_append = np.array([{}] * len(idx), dtype=object)
         to_append[idxs_sub] = {"weight": "bold", "color": "black", "size": 16}
         per_element_annot_kws.append(to_append)
 
@@ -1127,7 +1136,7 @@ def plot_alleles_table(
         plt.savefig(
             _jp("9.Alleles_around_cut_site_for_%s.png" % sgRNA_name),
             bbox_inches="tight",
-            pad=1,
+            pad_inches=1,
         )
 
 
@@ -1149,8 +1158,8 @@ def run_crispresso(args):
         clean_name = slugify(args.name)
         if args.name != clean_name:
             warn(
-                "The specified name %s contained characters not allowed and was changed to: %s"
-                % (args.name, clean_name)
+                f"The specified name {args.name} contained "
+                f"characters not allowed and was changed to: {clean_name}"
             )
             args.name = clean_name
 
@@ -1160,7 +1169,7 @@ def run_crispresso(args):
     wrong_nt = find_wrong_nt(args.amplicon_seq)
     if wrong_nt:
         raise NTException(
-            "The amplicon sequence contains wrong characters:%s" % " ".join(wrong_nt)
+            f"The amplicon sequence contains wrong characters:%s" % " ".join(wrong_nt)
         )
 
     len_amplicon = len(args.amplicon_seq)
@@ -1213,7 +1222,9 @@ def run_crispresso(args):
 
         if not cut_points:
             raise SgRNASequenceException(
-                "The guide sequence/s provided is(are) not present in the amplicon sequence! \n\nPlease check your input!"
+                "The guide sequence/s provided is(are) "
+                "not present in the amplicon sequence! "
+                "\n\nPlease check your input!"
             )
         else:
             info("Cut Points from guide seq:%s" % cut_points)
@@ -1229,14 +1240,16 @@ def run_crispresso(args):
 
         if args.expected_hdr_amplicon_seq == args.amplicon_seq:
             raise AmpliconEqualDonorException(
-                "The amplicon sequence expected after an HDR and the reference amplicon cannot be the same! \n\nPlease check your input!"
+                "The amplicon sequence expected after an HDR "
+                "and the reference amplicon cannot be the same! "
+                "\n\nPlease check your input!"
             )
 
         wrong_nt = find_wrong_nt(args.expected_hdr_amplicon_seq)
         if wrong_nt:
             raise NTException(
-                "The amplicon sequence expected after an HDR contains wrong characters:%s"
-                % " ".join(wrong_nt)
+                "The amplicon sequence expected after an HDR "
+                f"contains wrong characters:{wrong_nt}"
             )
 
         # if len(args.expected_hdr_amplicon_seq)!=len(args.amplicon_seq):
@@ -1250,7 +1263,11 @@ def run_crispresso(args):
         )
         if identity_ref_rep < args.min_identity_score:
             raise DonorSequenceException(
-                "The amplicon sequence expected after an HDR should be provided as the reference amplicon sequence with the relevant part of the donor sequence replaced, and not just as the donor sequence. \n\nPlease check your input!"
+                "The amplicon sequence expected after an HDR "
+                "should be provided as the reference amplicon "
+                "sequence with the relevant part of the donor "
+                "sequence replaced, and not just as the donor "
+                "sequence. \n\nPlease check your input!"
             )
 
     if args.donor_seq:
@@ -1263,7 +1280,10 @@ def run_crispresso(args):
 
         if args.donor_seq not in args.expected_hdr_amplicon_seq:
             raise CoreDonorSequenceNotContainedException(
-                "The donor sequence provided is not present in the expected HDR amplicon sequence, or the expected HDR amplicon sequence parameter (-e) is not defined.  \n\nPlease check your input!"
+                "The donor sequence provided is not present in the "
+                "expected HDR amplicon sequence, or the expected HDR "
+                "amplicon sequence parameter (-e) is not defined.  "
+                "\n\nPlease check your input!"
             )
 
         positions_core_donor_seq = [
@@ -1274,7 +1294,8 @@ def run_crispresso(args):
         ]
         if len(positions_core_donor_seq) > 1:
             raise CoreDonorSequenceNotUniqueException(
-                "The donor sequence provided is not unique in the expected HDR amplicon sequence.  \n\nPlease check your input!"
+                "The donor sequence provided is not unique in the "
+                "expected HDR amplicon sequence.  \n\nPlease check your input!"
             )
         core_donor_seq_st_en = positions_core_donor_seq[0]
 
@@ -1319,18 +1340,22 @@ def run_crispresso(args):
 
         exon_positions = sorted(exon_positions)
 
-        # protect from the wrong splitting of exons by the users to avoid false splicing sites
+        # protect from the wrong splitting of exons by the
+        # users to avoid false splicing sites
         splicing_positions = set(splicing_positions).difference(exon_positions)
 
     else:
         PERFORM_FRAMESHIFT_ANALYSIS = False
 
-    # we have insertions/deletions that change the concatenated exon sequence lenght and the difference between the final sequence
+    # we have insertions/deletions that change the concatenated
+    # exon sequence lenght and the difference between the final sequence
     # and the original sequence lenght is not a multiple of 3
     MODIFIED_FRAMESHIFT = 0
 
-    # we have insertions/deletions that change the concatenated exon sequence lenght and the difference between the final sequence
-    # and the original sequence lenght is a multiple of 3. We are in this case also when no indels are present but we have
+    # we have insertions/deletions that change the concatenated
+    # exon sequence lenght and the difference between the final sequence
+    # and the original sequence lenght is a multiple of 3. We
+    # are in this case also when no indels are present but we have
     # substitutions
     MODIFIED_NON_FRAMESHIFT = 0
 
@@ -1389,7 +1414,8 @@ def run_crispresso(args):
 
         if args.fastq_r2 != "":
             raise Exception(
-                "The option --split_paired_end is available only when a single fastq file is specified!"
+                "The option --split_paired_end is available "
+                "only when a single fastq file is specified!"
             )
         else:
             info("Splitting paired end single fastq file in two files...")
@@ -1526,18 +1552,12 @@ def run_crispresso(args):
         # Merging with Flash
         info("Merging paired sequences with Flash...")
         cmd = (
-            "flash %s %s --allow-outies --max-overlap %d --min-overlap %d -f %d -r %d -s %d  -z -d %s >>%s 2>&1"
-            % (
-                output_forward_paired_filename,
-                output_reverse_paired_filename,
-                args.max_paired_end_reads_overlap,
-                args.min_paired_end_reads_overlap,
-                len_amplicon,
-                avg_read_length,
-                std_fragment_length,
-                OUTPUT_DIRECTORY,
-                log_filename,
-            )
+            f"flash {output_forward_paired_filename} "
+            f"{output_reverse_paired_filename} "
+            f"--allow-outies --max-overlap {args.max_paired_end_reads_overlap} "
+            f"--min-overlap {args.min_paired_end_reads_overlap} "
+            f"-f {len_amplicon} -r {avg_read_length} "
+            f"-s {std_fragment_length}  -z -d {OUTPUT_DIRECTORY} >>{log_filename} 2>&1"
         )
 
         FLASH_STATUS = sb.call(cmd, shell=True)
@@ -2262,6 +2282,7 @@ def run_crispresso(args):
     pdf = PdfPages(_jp(f"crispresso_report_for_{database_id}.pdf"))
 
     pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
 
     plt.figure(figsize=(8.3, 8))
     plt.bar(
@@ -2301,6 +2322,7 @@ def run_crispresso(args):
         )
 
     pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
 
     ####PIE CHARTS FOR HDR/NHEJ/MIXED/EVENTS###
 
@@ -2464,6 +2486,7 @@ def run_crispresso(args):
 
     pdf.attach_note("Unmodified NEHJ pie chart")
     pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
 
     ###############################################################################################################################################
 
@@ -2598,6 +2621,7 @@ def run_crispresso(args):
         )
 
     pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
 
     # (4) another graph with the frequency that each nucleotide within the amplicon was modified in any way (perhaps would consider insertion as modification of the flanking nucleotides);
 
@@ -2693,10 +2717,11 @@ def run_crispresso(args):
             _jp("4a.Combined_Insertion_Deletion_Substitution_Locations.png"),
             bbox_extra_artists=(lgd,),
             bbox_inches="tight",
-            pad=1,
+            pad_inches=1,
         )
 
     pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
 
     # NHEJ
     plt.figure(figsize=(10, 10))
@@ -2798,10 +2823,11 @@ def run_crispresso(args):
             _jp("4b.Insertion_Deletion_Substitution_Locations_NHEJ.png"),
             bbox_extra_artists=(lgd,),
             bbox_inches="tight",
-            pad=1,
+            pad_inches=1,
         )
 
     pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
 
     if args.expected_hdr_amplicon_seq:
 
@@ -2912,10 +2938,11 @@ def run_crispresso(args):
                 _jp("4c.Insertion_Deletion_Substitution_Locations_HDR.png"),
                 bbox_extra_artists=(lgd,),
                 bbox_inches="tight",
-                pad=1,
+                pad_inches=1,
             )
 
         pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
 
         # MIXED
         plt.figure(figsize=(10, 10))
@@ -3024,9 +3051,10 @@ def run_crispresso(args):
                 _jp("4d.Insertion_Deletion_Substitution_Locations_Mixed_HDR_NHEJ.png"),
                 bbox_extra_artists=(lgd,),
                 bbox_inches="tight",
-                pad=1,
+                pad_inches=1,
             )
         pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
 
     # Position dependent indels plot
     fig = plt.figure(figsize=(24, 10))
@@ -3323,6 +3351,7 @@ def run_crispresso(args):
             )
 
         pdf.savefig()  # saves the current figure into a pdf page
+        plt.close("all")
 
         # non coding
         plt.figure(figsize=(10, 10))
@@ -3419,6 +3448,7 @@ def run_crispresso(args):
             )
 
     pdf.savefig()  # saves the current figure into a pdf page
+    plt.close()
 
     ##new plots alleles around cut_sites
     for sgRNA, cut_point in zip(sgRNA_sequences, cut_points):
@@ -3438,6 +3468,7 @@ def run_crispresso(args):
         )
 
         pdf.savefig()
+        plt.close("all")
 
     # We can also set the file's metadata via the PdfPages object:
     d = pdf.infodict()
@@ -3729,7 +3760,7 @@ def run_crispresso(args):
 
     info("All Done!")
     print(
-        r"""
+        """
                 )
                 (
             __)__
@@ -3739,15 +3770,23 @@ def run_crispresso(args):
             """
     )
 
-    sys.exit(0)
+    return (
+        N_UNMODIFIED,
+        N_MIXED_HDR_NHEJ,
+        N_MODIFIED,
+        N_REPAIRED,
+        nhej_inserted,
+        nhej_deleted,
+        nhej_mutated,
+    )
 
 
-def main():
+def main():  # pragma: no cover
     try:
         print("  \n~~~CRISPResso~~~")
         print("-Analysis of CRISPR/Cas9 outcomes from deep sequencing data-")
         print(
-            r"""
+            """
                       )
                      (
                     __)__
@@ -3798,7 +3837,26 @@ def main():
         parser.add_argument(
             "-g",
             "--guide_seq",
-            help="sgRNA sequence, if more than one, please separate by comma/s. Note that the sgRNA needs to be input as the guide RNA sequence (usually 20 nt) immediately adjacent to but not including the PAM sequence (5' of NGG for SpCas9). If the PAM is found on the opposite strand with respect to the Amplicon Sequence, ensure the sgRNA sequence is also found on the opposite strand. The CRISPResso convention is to depict the expected cleavage position using the value of the parameter cleavage_offset nt  3' from the end of the guide. In addition, the use of alternate nucleases to SpCas9 is supported. For example, if using the Cpf1 system, enter the sequence (usually 20 nt) immediately 3' of the PAM sequence and explicitly set the cleavage_offset parameter to 1, since the default setting of -3 is suitable only for SpCas9.",
+            help=(
+                "sgRNA sequence, if more than one, please "
+                "separate by comma/s. Note that the sgRNA "
+                "needs to be input as the guide RNA sequence "
+                "(usually 20 nt) immediately adjacent to but "
+                "not including the PAM sequence (5' of NGG for"
+                " SpCas9). If the PAM is found on the opposite "
+                "strand with respect to the Amplicon Sequence, "
+                "ensure the sgRNA sequence is also found on the "
+                "opposite strand. The CRISPResso convention is "
+                "to depict the expected cleavage position using "
+                "the value of the parameter cleavage_offset nt  3' "
+                "from the end of the guide. In addition, the "
+                "use of alternate nucleases to SpCas9 is "
+                "supported. For example, if using the Cpf1 "
+                "system, enter the sequence (usually 20 nt) "
+                "immediately 3' of the PAM sequence and explicitly "
+                "set the cleavage_offset parameter to 1, since "
+                "the default setting of -3 is suitable only for SpCas9."
+            ),
             default="",
         )
         parser.add_argument(
@@ -3810,13 +3868,23 @@ def main():
         parser.add_argument(
             "-d",
             "--donor_seq",
-            help="Donor Sequence. This optional input comprises a subsequence of the expected HDR amplicon to be highlighted in plots.",
+            help=(
+                "Donor Sequence. This optional input comprises "
+                "a subsequence of the expected HDR amplicon to "
+                "be highlighted in plots."
+            ),
             default="",
         )
         parser.add_argument(
             "-c",
             "--coding_seq",
-            help="Subsequence/s of the amplicon sequence covering one or more coding sequences for the frameshift analysis.If more than one (for example, split by intron/s), please separate by comma.",
+            help=(
+                "Subsequence/s of the amplicon sequence "
+                "covering one or more coding sequences "
+                "for the frameshift analysis.If more than "
+                "one (for example, split by intron/s), "
+                "please separate by comma."
+            ),
             default="",
         )
         parser.add_argument(
@@ -3843,7 +3911,10 @@ def main():
         parser.add_argument("-o", "--output_folder", help="", default="")
         parser.add_argument(
             "--split_paired_end",
-            help="Splits a single fastq file contating paired end reads in two files before running CRISPResso",
+            help=(
+                "Splits a single fastq file containing paired "
+                "end reads in two files before running CRISPResso"
+            ),
             action="store_true",
         )
         parser.add_argument(
@@ -3861,43 +3932,87 @@ def main():
         parser.add_argument(
             "--min_paired_end_reads_overlap",
             type=int,
-            help="Parameter for the FLASH read merging step. Minimum required overlap length between two reads to provide a confident overlap. ",
+            help=(
+                "Parameter for the FLASH read merging step. "
+                "Minimum required overlap length between two "
+                "reads to provide a confident overlap. "
+            ),
             default=4,
         )
         parser.add_argument(
             "--max_paired_end_reads_overlap",
             type=int,
-            help="Parameter for the FLASH merging step. Maximum overlap length expected in approximately 90%% of read pairs. Please see the FLASH manual for more information.",
+            help=(
+                "Parameter for the FLASH merging step. "
+                "Maximum overlap length expected in "
+                "approximately 90%% of read pairs. "
+                "Please see the FLASH manual for more information."
+            ),
             default=100,
         )
         parser.add_argument(
             "--hide_mutations_outside_window_NHEJ",
-            help="This parameter allows to visualize only the mutations overlapping the cleavage site and used to classify a read as NHEJ. This parameter has no effect on the quanitification of the NHEJ. It  may be helpful to mask a pre-existing and known mutations or sequencing errors outside the window used for quantification of NHEJ events.",
+            help=(
+                "This parameter allows to visualize "
+                "only the mutations overlapping the "
+                "cleavage site and used to classify "
+                "a read as NHEJ. This parameter has "
+                "no effect on the quanitification "
+                "of the NHEJ. It  may be helpful to "
+                "mask a pre-existing and known mutations "
+                "or sequencing errors outside the window "
+                "used for quantification of NHEJ events."
+            ),
             action="store_true",
         )
         parser.add_argument(
             "-w",
             "--window_around_sgrna",
             type=int,
-            help="Window(s) in bp around the cleavage position (half on on each side) as determined by the provide guide RNA sequence to quantify the indels. Any indels outside this window are excluded. A value of 0 disables this filter.",
+            help=(
+                "Window(s) in bp around the cleavage "
+                "position (half on on each side) as "
+                "determined by the provide guide RNA "
+                "sequence to quantify the indels. "
+                "Any indels outside this window are "
+                "excluded. A value of 0 disables this filter."
+            ),
             default=1,
         )
         parser.add_argument(
             "--cleavage_offset",
             type=int,
-            help="Cleavage offset to use within respect to the 3' end of the provided sgRNA sequence. Remember that the sgRNA sequence must be entered without the PAM. The default is -3 and is suitable for the SpCas9 system. For alternate nucleases, other cleavage offsets may be appropriate, for example, if using Cpf1 this parameter would be set to 1.",
+            help=(
+                "Cleavage offset to use within respect "
+                "to the 3' end of the provided sgRNA "
+                "sequence. Remember that the sgRNA "
+                "sequence must be entered without the PAM. "
+                "The default is -3 and is suitable for the "
+                "SpCas9 system. For alternate nucleases, "
+                "other cleavage offsets may be appropriate,"
+                "for example, if using Cpf1 this parameter "
+                "would be set to 1."
+            ),
             default=-3,
         )
         parser.add_argument(
             "--exclude_bp_from_left",
             type=int,
-            help="Exclude bp from the left side of the amplicon sequence for the quantification of the indels",
+            help=(
+                "Exclude bp from the left side of "
+                "the amplicon sequence for the "
+                "quantification of the indels"
+            ),
             default=15,
         )
         parser.add_argument(
             "--exclude_bp_from_right",
             type=int,
-            help="Exclude bp from the right side of the amplicon sequence for the quantification of the indels",
+            help=(
+                "Exclude bp from the right side of "
+                "the amplicon sequence for the "
+                "quantification of the indels"
+            ),
             default=15,
         )
         parser.add_argument(
@@ -3946,14 +4061,20 @@ def main():
             "-p",
             "--n_processes",
             type=int,
-            help="Specify the number of processes to use for the quantification.\
-             Please use with caution since increasing this parameter will increase significantly the memory required to run CRISPResso.",
+            help=(
+                "Specify the number of processes to use for the quantification."
+                "Please use with caution since increasing this parameter "
+                "will increase significantly the memory required to run CRISPResso."
+            ),
             default=1,
         )
         parser.add_argument(
             "--offset_around_cut_to_plot",
             type=int,
-            help="Offset to use to summarize alleles around the cut site in the alleles table plot.",
+            help=(
+                "Offset to use to summarize alleles around the cut"
+                " site in the alleles table plot."
+            ),
             default=20,
         )
         parser.add_argument(
@@ -3973,6 +4094,8 @@ def main():
         )
 
         args = parser.parse_args()
+
+        print(args)
 
         run_crispresso(args)
 

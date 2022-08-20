@@ -1,6 +1,7 @@
 from .CRISPRessoCORE import (
     check_file,
     check_library,
+    check_program,
     filter_pe_fastq_by_qual,
     filter_se_fastq_by_qual,
     find_wrong_nt,
@@ -8,4 +9,5 @@ from .CRISPRessoCORE import (
     get_ids_reads_to_remove,
     get_n_reads_fastq,
     reverse_complement,
+    run_crispresso
 )
