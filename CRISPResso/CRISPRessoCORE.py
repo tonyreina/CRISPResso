@@ -9,8 +9,6 @@ https://github.com/lucapinello/CRISPResso
 """
 __version__ = "1.1.0"
 
-from ast import fix_missing_locations
-from code import interact
 from typing import List
 import sys
 import errno
@@ -21,15 +19,13 @@ import re
 import gzip
 from collections import defaultdict
 import multiprocessing as mp
-import pickle as cp
+import pickle
 import unicodedata
 import traceback
 
 import datetime
 
 import logging
-
-from pyparsing import lineStart
 
 from matplotlib.backends.backend_pdf import PdfPages
 
@@ -57,7 +53,7 @@ def get_data(path: str) -> str:
 def check_library(library_name: str):
     try:
         return __import__(library_name)
-    except Exception as exc:
+    except Exception:
         raise Exception(f"You need to install {library_name} to use CRISPResso!")
 
 
@@ -83,20 +79,20 @@ def which(program: str):
 
 def check_program(binary_name: str, download_url: str = None):
     if not which(binary_name):
+        if download_url:
+            error(f"You can download it from here: {download_url}")
         raise Exception(
             "You need to install and have the command"
             f" #####{binary_name}##### in your PATH "
             "variable to use CRISPResso!\n Please read the documentation!"
         )
-        if download_url:
-            error(f"You can download it from here: {download_url}")
 
     return True
 
 
 def check_file(filename: str):
     try:
-        with open(filename):
+        with open(filename, "r", encoding="utf-8"):
             pass
     except IOError:
         raise Exception("I cannot open the file: " + filename)
@@ -129,13 +125,13 @@ def find_wrong_nt(sequence: str):
 
 
 def get_ids_reads_to_remove(
-    fastq_filename: str, min_bp_quality: int = 20, min_single_bp_quality: interact = 0
+    fastq_filename: str, min_bp_quality: int = 20, min_single_bp_quality: int = 0
 ) -> List[str]:
     ids_to_remove = set()
     if fastq_filename.endswith(".gz"):
         fastq_handle = gzip.open(fastq_filename, "rt")
     else:
-        fastq_handle = open(fastq_filename)
+        fastq_handle = open(fastq_filename, "r", encoding="utf-8")
 
     for record in SeqIO.parse(fastq_handle, "fastq"):
         if (
@@ -155,7 +151,19 @@ def filter_pe_fastq_by_qual(
     output_filename_r2: str = None,
     min_bp_quality: int = 20,
     min_single_bp_quality: int = 0,
-) -> (str, str):
+):
+    """
+    Filters paired end reads by quality score.
+
+    Args:
+        fastq_r1(str): Fastq filename for read 1
+        fastq_r2(str): Fastq filename for read 2
+        output_filename_r1(str): Output filename for read 1
+        output_filename_r2(str): Output filename for read 1
+        min_bp_quality(int): Minimum average base quality
+        min_single_bp_quality(int): Minimum single base quality
+
+    """
 
     ids_to_remove_s1 = get_ids_reads_to_remove(
         fastq_r1,
@@ -173,12 +181,12 @@ def filter_pe_fastq_by_qual(
     if fastq_r1.endswith(".gz"):
         fastq_handle_r1 = gzip.open(fastq_r1, "rt")
     else:
-        fastq_handle_r1 = open(fastq_r1)
+        fastq_handle_r1 = open(fastq_r1, "r", encoding="utf-8")
 
     if fastq_r2.endswith(".gz"):
         fastq_handle_r2 = gzip.open(fastq_r2, "rt")
     else:
-        fastq_handle_r2 = open(fastq_r2)
+        fastq_handle_r2 = open(fastq_r2, "r", encoding="utf-8")
 
     if not output_filename_r1:
         output_filename_r1 = (
@@ -190,14 +198,13 @@ def filter_pe_fastq_by_qual(
             fastq_r2.replace(".fastq", "").replace(".gz", "") + "_filtered.fastq.gz"
         )
 
-    # we cannot use with on gzip with python 2.6 :(
     try:
         fastq_filtered_outfile_r1 = gzip.open(output_filename_r1, "wt")
 
         for record in SeqIO.parse(fastq_handle_r1, "fastq"):
             if not record.id in ids_to_remove:
                 fastq_filtered_outfile_r1.write(record.format("fastq"))
-    except:
+    except Exception:
         raise Exception("Error handling the fastq_filtered_outfile_r1")
 
     try:
@@ -206,7 +213,7 @@ def filter_pe_fastq_by_qual(
         for record in SeqIO.parse(fastq_handle_r2, "fastq"):
             if not record.id in ids_to_remove:
                 fastq_filtered_outfile_r2.write(record.format("fastq"))
-    except:
+    except Exception:
         raise Exception("Error handling the fastq_filtered_outfile_r2")
 
     return output_filename_r1, output_filename_r2
@@ -222,7 +229,7 @@ def filter_se_fastq_by_qual(
     if fastq_filename.endswith(".gz"):
         fastq_handle = gzip.open(fastq_filename, "rt")
     else:
-        fastq_handle = open(fastq_filename)
+        fastq_handle = open(fastq_filename, "r", encoding="utf-8")
 
     if not output_filename:
         output_filename = (
@@ -241,7 +248,7 @@ def filter_se_fastq_by_qual(
                 >= min_single_bp_quality
             ):
                 fastq_filtered_outfile.write(record.format("fastq"))
-    except:
+    except Exception:
         raise Exception("Error handling the fastq_filtered_outfile")
 
     return output_filename
@@ -703,9 +710,8 @@ def split_paired_end_reads_single_file(
     if fastq_filename.endswith(".gz"):
         fastq_handle = gzip.open(fastq_filename)
     else:
-        fastq_handle = open(fastq_filename)
+        fastq_handle = open(fastq_filename, "r", encoding="utf-8")
 
-    # we cannot use with on gzip with python 2.6 :(
     try:
         fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, "wt")
         fastq_splitted_outfile_r2 = gzip.open(output_filename_r2, "wt")
@@ -1040,7 +1046,7 @@ def plot_alleles_table(
     )
 
     ax_hm.yaxis.tick_right()
-    ax_hm.yaxis.set_ticklabels(y_labels[::-1], rotation=True),
+    ax_hm.yaxis.set_ticklabels(y_labels[::-1], rotation=True)
     ax_hm.xaxis.set_ticks([])
 
     # print lines
@@ -1372,17 +1378,17 @@ def run_crispresso(args):
 
     if not args.name:
         if args.fastq_r2 != "":
-            database_id = "%s_%s" % (
-                get_name_from_fasta(args.fastq_r1),
-                get_name_from_fasta(args.fastq_r2),
+            database_id = (
+                f"{get_name_from_fasta(args.fastq_r1)}_"
+                f"{get_name_from_fasta(args.fastq_r2)}"
             )
         else:
-            database_id = "%s" % get_name_from_fasta(args.fastq_r1)
+            database_id = get_name_from_fasta(args.fastq_r1)
 
     else:
         database_id = args.name
 
-    OUTPUT_DIRECTORY = "CRISPResso_on_%s" % database_id
+    OUTPUT_DIRECTORY = f"CRISPResso_on_{database_id}"
 
     if args.output_folder:
         OUTPUT_DIRECTORY = os.path.join(
@@ -1396,18 +1402,17 @@ def run_crispresso(args):
 
     try:
         os.makedirs(OUTPUT_DIRECTORY)
-        info("Creating Folder %s" % OUTPUT_DIRECTORY)
+        info(f"Creating Folder {OUTPUT_DIRECTORY}")
         info("Done!")
-    except:
-        warn("Folder %s already exists." % OUTPUT_DIRECTORY)
+    except Exception:
+        warn(f"Folder {OUTPUT_DIRECTORY} already exists.")
 
     finally:
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
 
-        with open(log_filename, "wt") as outfile:
+        with open(log_filename, "wt", encoding="utf-8") as outfile:
             outfile.write(
-                "[Command used]:\nCRISPResso %s\n\n[Execution log]:\n"
-                % " ".join(sys.argv)
+                f"[Command used]:\nCRISPResso {sys.argv}\n\n[Execution log]:\n"
             )
 
     if args.split_paired_end:
@@ -1589,7 +1594,7 @@ def run_crispresso(args):
 
     # write .fa file only for amplicon the rest we pipe trough awk on the fly!
 
-    with open(database_fasta_filename, "wt") as outfile:
+    with open(database_fasta_filename, "wt", encoding="utf-8") as outfile:
         outfile.write(">%s\n%s\n" % (database_id, args.amplicon_seq))
 
     if args.expected_hdr_amplicon_seq:
@@ -1598,7 +1603,7 @@ def run_crispresso(args):
             "needle_output_repair_%s.txt.gz" % database_id
         )
 
-        with open(database_repair_fasta_filename, "wt") as outfile:
+        with open(database_repair_fasta_filename, "wt", encoding="utf-8") as outfile:
             outfile.write(">%s\n%s\n" % (database_id, args.expected_hdr_amplicon_seq))
 
     def parse_needle_output(needle_filename, name="seq", just_score=False):
@@ -1691,20 +1696,19 @@ def run_crispresso(args):
             + (" gunzip |" if processed_output_filename.endswith(".gz") else " ")
         )
         + r""" awk 'NR % 4 == 1 {print ">" $0} NR % 4 ==2 {print $0}' """
-        + " | sed 's/:/_/g' | needle -asequence=%s -bsequence=/dev/stdin -outfile=/dev/stdout %s 2>> %s  | gzip >%s"
-        % (
-            database_fasta_filename,
-            args.needle_options_string,
-            log_filename,
-            needle_output_filename,
-        )
+        + " | sed 's/:/_/g' | needle "
+        f"-asequence={database_fasta_filename} "
+        "-bsequence=/dev/stdin -outfile=/dev/stdout "
+        f"{args.needle_options_string} 2>> {log_filename}  "
+        f"| gzip >{needle_output_filename}"
     )
 
     NEEDLE_OUTPUT = sb.call(cmd, shell=True)
     if NEEDLE_OUTPUT:
         raise NeedleException("Needle failed to run, please check the log file.")
 
-    # If we have a donor sequence we just compare the fq in the two cases and see which one alignes better
+    # If we have a donor sequence we just compare
+    # the fq in the two cases and see which one aligns better
     if args.expected_hdr_amplicon_seq:
 
         cmd_repair = (
@@ -1713,18 +1717,16 @@ def run_crispresso(args):
                 + (" gunzip |" if processed_output_filename.endswith(".gz") else " ")
             )
             + r""" awk 'NR % 4 == 1 {print ">" $0} NR % 4 ==2 {print $0}' """
-            + " | sed 's/:/_/g' | needle -asequence=%s -bsequence=/dev/stdin -outfile=/dev/stdout %s 2>> %s  | gzip >%s"
-            % (
-                database_repair_fasta_filename,
-                args.needle_options_string,
-                log_filename,
-                needle_output_repair_filename,
-            )
+            + " | sed 's/:/_/g' | needle "
+            f"-asequence={database_repair_fasta_filename} "
+            "-bsequence=/dev/stdin -outfile=/dev/stdout "
+            f"{args.needle_options_string} 2>> {log_filename}  "
+            f"| gzip >{needle_output_repair_filename}"
         )
         NEEDLE_OUTPUT = sb.call(cmd_repair, shell=True)
 
         if NEEDLE_OUTPUT:
-            raise NeedleException("Needle failed to run, please check the log file.")
+            raise NeedleException("Needle failed to run, please " "check the log file.")
         info("Done!")
 
     # merge the flow
@@ -1766,8 +1768,6 @@ def run_crispresso(args):
     else:
         df_needle_alignment = parse_needle_output(needle_output_filename, "ref")
 
-        N_TOTAL_ALSO_UNALIGNED = df_needle_alignment.shape[0] * 1.0
-
         sr_not_aligned = df_needle_alignment.loc[
             (df_needle_alignment.score_ref < args.min_identity_score)
         ].align_seq.apply(lambda x: x.replace("_", ""))
@@ -1793,39 +1793,33 @@ def run_crispresso(args):
 
         info("Align sequences to reverse complement of the amplicon...")
 
-        with open(database_rc_fasta_filename, "wt") as outfile:
-            outfile.write(
-                ">%s\n%s\n" % (database_id, reverse_complement(args.amplicon_seq))
-            )
+        with open(database_rc_fasta_filename, "wt", encoding="utf-8") as outfile:
+            outfile.write(f">{database_id}\n{reverse_complement(args.amplicon_seq)}\n")
 
         if args.expected_hdr_amplicon_seq:
             database_repair_rc_fasta_filename = _jp(
-                "%s_database_repair_rc.fa" % database_id
+                f"{database_id}_database_repair_rc.fa"
             )
             needle_output_repair_rc_filename = _jp(
-                "needle_output_repair_rc_%s.txt.gz" % database_id
+                f"needle_output_repair_rc_{database_id}.txt.gz"
             )
 
-            with open(database_repair_rc_fasta_filename, "wt") as outfile:
+            with open(
+                database_repair_rc_fasta_filename, "wt", encoding="utf-8"
+            ) as outfile:
                 outfile.write(
-                    ">%s\n%s\n"
-                    % (
-                        database_id,
-                        reverse_complement(args.expected_hdr_amplicon_seq),
-                    )
+                    f">{database_id}\n"
+                    f"{reverse_complement(args.expected_hdr_amplicon_seq)}\n"
                 )
         info("Done!")
 
         # Now we do the alignment
         cmd = (
-            "zcat < %s | sed 's/:/_/g' | needle -asequence=%s -bsequence=/dev/stdin -outfile=/dev/stdout %s 2>> %s  | gzip >%s"
-            % (
-                fasta_not_aligned_filename,
-                database_rc_fasta_filename,
-                args.needle_options_string,
-                log_filename,
-                needle_output_rc_filename,
-            )
+            f"zcat < {fasta_not_aligned_filename} | sed 's/:/_/g' | "
+            f"needle -asequence={database_rc_fasta_filename} "
+            f"-bsequence=/dev/stdin -outfile=/dev/stdout "
+            f"{args.needle_options_string} 2>> {log_filename}  "
+            f"| gzip >{needle_output_rc_filename}"
         )
 
         NEEDLE_OUTPUT = sb.call(cmd, shell=True)
@@ -1834,14 +1828,11 @@ def run_crispresso(args):
 
         if args.expected_hdr_amplicon_seq:
             cmd = (
-                "zcat < %s | sed 's/:/_/g' | needle -asequence=%s -bsequence=/dev/stdin -outfile=/dev/stdout %s 2>> %s  | gzip >%s"
-                % (
-                    fasta_not_aligned_filename,
-                    database_repair_rc_fasta_filename,
-                    args.needle_options_string,
-                    log_filename,
-                    needle_output_repair_rc_filename,
-                )
+                f"zcat < {fasta_not_aligned_filename} | sed 's/:/_/g' | "
+                f"needle -asequence={database_repair_rc_fasta_filename} "
+                "-bsequence=/dev/stdin -outfile=/dev/stdout "
+                f"args.needle_options_string 2>> {log_filename}  "
+                f"| gzip >{needle_output_repair_rc_filename}"
             )
 
             NEEDLE_OUTPUT = sb.call(cmd, shell=True)
@@ -1892,7 +1883,8 @@ def run_crispresso(args):
                 df_needle_alignment_rc.score_ref > args.min_identity_score
             ]
 
-        # reverse complement and invert the align string so we have everything in the positive strand
+        # reverse complement and invert the align string
+        # so we have everything in the positive strand
         df_needle_alignment_rc["ref_seq"] = df_needle_alignment_rc["ref_seq"].apply(
             reverse_complement
         )
@@ -2186,8 +2178,6 @@ def run_crispresso(args):
     info("Calculating alleles frequencies...")
 
     def get_ref_positions(row, df_alignment):
-        # return list(df_alignment.loc[(row.Aligned_Sequence ,row.Reference_Sequence),'ref_positions'][0])
-
         ref_positions = list(
             df_alignment.loc[[(row.Aligned_Sequence, row.Reference_Sequence)]]
             .iloc[
@@ -2330,7 +2320,7 @@ def run_crispresso(args):
 
         fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
         ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
-        patches, texts, autotexts = ax1.pie(
+        _, texts, autotexts = ax1.pie(
             [N_UNMODIFIED, N_MIXED_HDR_NHEJ, N_MODIFIED, N_REPAIRED],
             labels=[
                 "Unmodified\n(%d reads)" % N_UNMODIFIED,
@@ -2346,7 +2336,6 @@ def run_crispresso(args):
         if cut_points or args.donor_seq:
             ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
             ax2.plot([0, len_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence")
-            # plt.hold(True)
 
             if args.donor_seq:
                 ax2.plot(
@@ -2414,7 +2403,7 @@ def run_crispresso(args):
     else:
         fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
         ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
-        patches, texts, autotexts = ax1.pie(
+        _, texts, autotexts = ax1.pie(
             [N_UNMODIFIED / N_TOTAL * 100, N_MODIFIED / N_TOTAL * 100],
             labels=[
                 "Unmodified\n(%d reads)" % N_UNMODIFIED,
@@ -2488,11 +2477,10 @@ def run_crispresso(args):
     pdf.savefig()  # saves the current figure into a pdf page
     plt.close()
 
-    ###############################################################################################################################################
-
-    ###############################################################################################################################################
-
-    # (3) a graph of frequency of deletions and insertions of various sizes (deletions could be consider as negative numbers and insertions as positive);
+    ##############################################
+    # (3) a graph of frequency of deletions and
+    # insertions of various sizes (deletions
+    # could be consider as negative numbers and insertions as positive);
 
     def calculate_range(df, column_name):
         df_not_zero = df.loc[df[column_name] > 0, column_name]
@@ -2623,7 +2611,10 @@ def run_crispresso(args):
     pdf.savefig()  # saves the current figure into a pdf page
     plt.close()
 
-    # (4) another graph with the frequency that each nucleotide within the amplicon was modified in any way (perhaps would consider insertion as modification of the flanking nucleotides);
+    # (4) another graph with the frequency that
+    # each nucleotide within the amplicon was
+    # modified in any way (perhaps would consider
+    # insertion as modification of the flanking nucleotides);
 
     # Indels location Plots
 
@@ -3162,7 +3153,7 @@ def run_crispresso(args):
         # make frameshift plots
         fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
         ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
-        patches, texts, autotexts = ax1.pie(
+        _, texts, autotexts = ax1.pie(
             [
                 MODIFIED_FRAMESHIFT,
                 MODIFIED_NON_FRAMESHIFT,
@@ -3245,7 +3236,7 @@ def run_crispresso(args):
 
         pdf.savefig()  # saves the current figure into a pdf page
 
-        # profiles-----------------------------------------------------------------------------------
+        # profiles--------------------------------------------
         fig = plt.figure(figsize=(22, 10))
         ax1 = fig.add_subplot(2, 1, 1)
         x, y = map(np.array, zip(*[a for a in hist_frameshift.items()]))
@@ -3314,10 +3305,10 @@ def run_crispresso(args):
 
         pdf.savefig()  # saves the current figure into a pdf page
 
-        # -----------------------------------------------------------------------------------------------------------
+        # ---------------------------------------------------
         fig = plt.figure(figsize=(12 * 1.5, 12 * 1.5))
         ax = fig.add_subplot(1, 1, 1)
-        patches, texts, autotexts = ax.pie(
+        _, texts, autotexts = ax.pie(
             [
                 SPLICING_SITES_MODIFIED,
                 (df_needle_alignment.shape[0] - SPLICING_SITES_MODIFIED),
@@ -3613,25 +3604,33 @@ def run_crispresso(args):
     if np.isnan(mixed_mutated):
         mixed_mutated = 0
 
-    with open(_jp("Quantification_of_editing_frequency.txt"), "wt") as outfile:
+    with open(
+        _jp("Quantification_of_editing_frequency.txt"), "wt", encoding="utf-8"
+    ) as outfile:
         outfile.write(
             (
-                "Quantification of editing frequency:\n\t- Unmodified:%d reads\n"
-                % N_UNMODIFIED
+                "Quantification of editing frequency:\n\t- "
+                f"Unmodified:{N_UNMODIFIED} reads\n"
             )
             + (
-                "\t- NHEJ:%d reads (%d reads with insertions, %d reads with deletions, %d reads with substitutions)\n"
-                % (N_MODIFIED, nhej_inserted, nhej_deleted, nhej_mutated)
+                f"\t- NHEJ:{N_MODIFIED} reads "
+                f"({nhej_inserted} reads with insertions, "
+                f"{nhej_deleted} reads with deletions, "
+                f"{nhej_mutated} reads with substitutions)\n"
             )
             + (
-                "\t- HDR:%d reads (%d reads with insertions, %d reads with deletions, %d reads with substitutions)\n"
-                % (N_REPAIRED, hdr_inserted, hdr_deleted, hdr_mutated)
+                f"\t- HDR:{N_REPAIRED} reads "
+                f"({hdr_inserted} reads with insertions, "
+                f"{hdr_deleted} reads with deletions, "
+                f"{hdr_mutated} reads with substitutions)\n"
             )
             + (
-                "\t- Mixed HDR-NHEJ:%d reads (%d reads with insertions, %d reads with deletions, %d reads with substitutions)\n\n"
-                % (N_MIXED_HDR_NHEJ, mixed_inserted, mixed_deleted, mixed_mutated)
+                f"\t- Mixed HDR-NHEJ:{N_MIXED_HDR_NHEJ} reads "
+                f"({mixed_inserted} reads with insertions, "
+                f"{mixed_deleted} reads with deletions, "
+                f"{mixed_mutated} reads with substitutions)\n\n"
             )
-            + ("Total Aligned:%d reads " % N_TOTAL)
+            + (f"Total Aligned:{N_TOTAL} reads ")
         )
 
     # write alleles table
@@ -3640,7 +3639,7 @@ def run_crispresso(args):
     )
 
     # write statistics
-    with open(_jp("Mapping_statistics.txt"), "wt") as outfile:
+    with open(_jp("Mapping_statistics.txt"), "wt", encoding="utf-8") as outfile:
         outfile.write(
             f"READS IN INPUTS:{N_READS_INPUT}\n"
             f"READS AFTER PREPROCESSING:{N_READS_AFTER_PREPROCESSING}"
@@ -3648,7 +3647,7 @@ def run_crispresso(args):
         )
 
     if PERFORM_FRAMESHIFT_ANALYSIS:
-        with open(_jp("Frameshift_analysis.txt"), "wt") as outfile:
+        with open(_jp("Frameshift_analysis.txt"), "wt", encoding="utf-8") as outfile:
             outfile.write(
                 "Frameshift analysis:\n\t"
                 f"Noncoding mutation:{NON_MODIFIED_NON_FRAMESHIFT} reads\n\t"
@@ -3656,12 +3655,12 @@ def run_crispresso(args):
                 f"Frameshift mutation:{MODIFIED_FRAMESHIFT} reads\n"
             )
 
-        with open(_jp("Splice_sites_analysis.txt"), "wt") as outfile:
+        with open(_jp("Splice_sites_analysis.txt"), "wt", encoding="utf-8") as outfile:
             unmodified = df_needle_alignment.shape[0] - SPLICING_SITES_MODIFIED
             outfile.write(
                 "Splice sites analysis:\n\t"
                 f"Unmodified:{unmodified} reads\n\t"
-                "Potential splice sites modified:{SPLICING_SITES_MODIFIED} reads\n"
+                f"Potential splice sites modified:{SPLICING_SITES_MODIFIED} reads\n"
             )
 
         save_vector_to_file(
@@ -3717,13 +3716,13 @@ def run_crispresso(args):
         )
 
     if cut_points:
-        cp.dump(sgRNA_intervals, open(_jp("sgRNA_intervals.pickle"), "wb"))
+        pickle.dump(sgRNA_intervals, open(_jp("sgRNA_intervals.pickle"), "wb"))
 
     if sgRNA_intervals:
-        cp.dump(cut_points, open(_jp("cut_points.pickle"), "wb"))
+        pickle.dump(cut_points, open(_jp("cut_points.pickle"), "wb"))
 
     if offset_plots.any():
-        cp.dump(offset_plots, open(_jp("offset_plots.pickle"), "wb"))
+        pickle.dump(offset_plots, open(_jp("offset_plots.pickle"), "wb"))
 
     if args.dump:
         info("Dumping all the processed data...")
@@ -3760,7 +3759,7 @@ def run_crispresso(args):
 
     info("All Done!")
     print(
-        """
+        r"""
                 )
                 (
             __)__
@@ -3782,11 +3781,20 @@ def run_crispresso(args):
 
 
 def main():  # pragma: no cover
+    def print_stacktrace_if_debug():
+        debug_flag = False
+        if "args" in globals() and "debug" in args:
+            debug_flag = args.debug
+
+        if debug_flag:
+            traceback.print_exc(file=sys.stdout)
+
     try:
+
         print("  \n~~~CRISPResso~~~")
         print("-Analysis of CRISPR/Cas9 outcomes from deep sequencing data-")
         print(
-            """
+            r"""
                       )
                      (
                     __)__
@@ -3798,17 +3806,9 @@ def main():  # pragma: no cover
         print(
             "\n[Luca Pinello 2015, send bugs, suggestions or "
             "*green coffee* to lucapinello AT gmail DOT com]\n\n"
-        ),
+        )
 
-        print("Version %s\n" % __version__)
-
-        def print_stacktrace_if_debug():
-            debug_flag = False
-            if "args" in globals() and "debug" in args:
-                debug_flag = args.debug
-
-            if debug_flag:
-                traceback.print_exc(file=sys.stdout)
+        print(f"Version {__version__}\n")
 
         parser = argparse.ArgumentParser(
             description="CRISPResso Parameters",
@@ -3926,8 +3926,8 @@ def main():  # pragma: no cover
             "--trimmomatic_options_string",
             type=str,
             help="Override options for Trimmomatic",
-            default=" ILLUMINACLIP:%s:0:90:10:0:true MINLEN:40"
-            % get_data("NexteraPE-PE.fa"),
+            default=f" ILLUMINACLIP:{get_data('NexteraPE-PE.fa')}"
+            ":0:90:10:0:true MINLEN:40",
         )
         parser.add_argument(
             "--min_paired_end_reads_overlap",
@@ -4049,7 +4049,8 @@ def main():  # pragma: no cover
         )
         parser.add_argument(
             "--dump",
-            help="Dump numpy arrays and pandas dataframes to file for debugging purposes",
+            help="Dump numpy arrays and pandas dataframes "
+            "to file for debugging purposes",
             action="store_true",
         )
         parser.add_argument(
@@ -4105,30 +4106,30 @@ def main():  # pragma: no cover
         sys.exit(1)
     except SgRNASequenceException as exc:
         print_stacktrace_if_debug()
-        error("sgRNA error, please check your input.\n\nERROR: {exc}")
+        error(f"sgRNA error, please check your input.\n\nERROR: {exc}")
         sys.exit(2)
     except DonorSequenceException as exc:
         print_stacktrace_if_debug()
         error(
             "Problem with the expected hdr amplicon sequence parameter, "
-            f"please check your input.\n\nERROR: exc"
+            f"please check your input.\n\nERROR: {exc}"
         )
         sys.exit(3)
     except TrimmomaticException as exc:
         print_stacktrace_if_debug()
-        error("Trimming error, please check your input.\n\nERROR: {exc}")
+        error(f"Trimming error, please check your input.\n\nERROR: {exc}")
         sys.exit(4)
     except FlashException as exc:
         print_stacktrace_if_debug()
-        error("Merging error, please check your input.\n\nERROR: {exc}")
+        error(f"Merging error, please check your input.\n\nERROR: {exc}")
         sys.exit(5)
     except NeedleException as exc:
         print_stacktrace_if_debug()
-        error("Alignment error, please check your input.\n\nERROR: {exc}")
+        error(f"Alignment error, please check your input.\n\nERROR: {exc}")
         sys.exit(6)
     except NoReadsAlignedException as exc:
         print_stacktrace_if_debug()
-        error("Alignment error, please check your input.\n\nERROR: {exc}")
+        error(f"Alignment error, please check your input.\n\nERROR: {exc}")
         sys.exit(7)
     except AmpliconEqualDonorException as exc:
         print_stacktrace_if_debug()
