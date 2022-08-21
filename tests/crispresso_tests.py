@@ -195,7 +195,7 @@ def test_run_crispresso(p, keep_intermediate, trim_sequences):
         df_insertion,
         df_deletion,
         df_substitution,
-        df_alleles
+        df_alleles,
     ) = cr.run_crispresso(args)
 
     assert n_total == 7058

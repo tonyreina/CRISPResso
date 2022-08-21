@@ -336,7 +336,15 @@ def filter_se_fastq_by_qual(
     return output_filename
 
 
-def get_average_read_length_fastq(fastq_filename):
+def get_average_read_length_fastq(fastq_filename: str) -> int:
+    """Get average read length for FastQ
+
+    Args:
+        fastq_filename(str): FastQ filename
+    Returns:
+        Average read length of FastQ
+
+    """
     cmd = (
         ("z" if fastq_filename.endswith(".gz") else "")
         + (f"cat < {fastq_filename}")
@@ -346,14 +354,22 @@ def get_average_read_length_fastq(fastq_filename):
     return int(p.communicate()[0].strip())
 
 
-def get_n_reads_fastq(fastq_filename):
+def get_n_reads_fastq(fastq_filename: str) -> int:
+    """Get number of reads in FastQ
+
+    Args:
+        fastq_filename(str): FastQ filename
+    Returns:
+        Average read length of FastQ
+
+    """
     p = sb.Popen(
         ("z" if fastq_filename.endswith(".gz") else "")
         + f"cat < {fastq_filename} | wc -l",
         shell=True,
         stdout=sb.PIPE,
     )
-    return int(float(p.communicate()[0]) / 4.0)
+    return int(float(p.communicate()[0]) // 4)
 
 
 matplotlib = check_library("matplotlib")
@@ -445,9 +461,9 @@ def process_df_chunk(chunk_input):
 
     # INITIALIZATIONS
     if args.coding_seq:
-        PERFORM_FRAMESHIFT_ANALYSIS = True
+        perform_frameshift_analysis = True
     else:
-        PERFORM_FRAMESHIFT_ANALYSIS = False
+        perform_frameshift_analysis = False
 
     effect_vector_insertion = np.zeros(len_amplicon)
     effect_vector_deletion = np.zeros(len_amplicon)
@@ -481,7 +497,7 @@ def process_df_chunk(chunk_input):
         if row.UNMODIFIED:
             continue
 
-        if PERFORM_FRAMESHIFT_ANALYSIS:
+        if perform_frameshift_analysis:
             lenght_modified_positions_exons = []
             current_read_exons_modified = False
             current_read_spliced_modified = False
@@ -662,7 +678,7 @@ def process_df_chunk(chunk_input):
             for idx_ins, ins_pos_set in enumerate(insertion_positions):
                 avg_vector_ins_all[ins_pos_set] += insertion_sizes[idx_ins]
 
-                if PERFORM_FRAMESHIFT_ANALYSIS:
+                if perform_frameshift_analysis:
                     if set(exon_positions).intersection(
                         ins_pos_set
                     ):  # check that we are inserting in one exon
@@ -672,7 +688,7 @@ def process_df_chunk(chunk_input):
             for idx_del, del_pos_set in enumerate(deletion_positions):
                 avg_vector_del_all[del_pos_set] += deletion_sizes[idx_del]
 
-            if PERFORM_FRAMESHIFT_ANALYSIS:
+            if perform_frameshift_analysis:
                 del_positions_to_append = sorted(
                     set(exon_positions).intersection(set(deletion_positions_flat))
                 )
@@ -791,12 +807,6 @@ def split_paired_end_reads_single_file(
     try:
         fastq_splitted_outfile_r1 = gzip.open(output_filename_r1, "wt")
         fastq_splitted_outfile_r2 = gzip.open(output_filename_r2, "wt")
-        [
-            fastq_splitted_outfile_r1.write(line)
-            if (i % 8 < 4)
-            else fastq_splitted_outfile_r2.write(line)
-            for i, line in enumerate(fastq_handle)
-        ]
     except:
         raise Exception("Error handling the splitting operation")
 
@@ -1006,13 +1016,13 @@ def plot_alleles_table(
     cut_point,
     df_alleles,
     sgRNA_name,
-    OUTPUT_DIRECTORY,
-    MIN_FREQUENCY=0.5,
-    MAX_N_ROWS=100,
-):
+    output_directory,
+    min_frequency: float = 0.5,
+    max_n_rows: int = 100,
+) -> pd.DataFrame:
     reference_seq = args.amplicon_seq
-    MIN_FREQUENCY = args.min_frequency_alleles_around_cut_to_plot
-    MAX_N_ROWS = args.max_rows_alleles_around_cut_to_plot
+    min_frequency = args.min_frequency_alleles_around_cut_to_plot
+    max_n_rows = args.max_rows_alleles_around_cut_to_plot
 
     # bp we are plotting on each side
     offset_around_cut_to_plot = len(df_alleles.index[0]) // 2
@@ -1045,8 +1055,8 @@ def plot_alleles_table(
     per_element_annot_kws = []
     idx_row = 0
 
-    for idx, row in df_alleles.loc[df_alleles["%Reads"] >= MIN_FREQUENCY][
-        :MAX_N_ROWS
+    for idx, row in df_alleles.loc[df_alleles["%Reads"] >= min_frequency][
+        :max_n_rows
     ].iterrows():
         X.append(seq_to_numbers(str.upper(idx)))
         annot.append(list(idx))
@@ -1089,7 +1099,7 @@ def plot_alleles_table(
     N_ROWS = len(X)
     N_COLUMNS = offset_around_cut_to_plot * 2
 
-    fig = plt.figure(figsize=(offset_around_cut_to_plot * 0.6, (N_ROWS + 1) * 0.6))
+    plt.figure(figsize=(offset_around_cut_to_plot * 0.6, (N_ROWS + 1) * 0.6))
     gs1 = gridspec.GridSpec(N_ROWS + 1, N_COLUMNS)
     gs2 = gridspec.GridSpec(N_ROWS + 1, N_COLUMNS)
 
@@ -1208,7 +1218,7 @@ def plot_alleles_table(
         ncol=1,
     )
 
-    _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename)
+    _jp = lambda filename: os.path.join(output_directory, filename)
 
     plt.savefig(
         _jp(f"9.Alleles_around_cut_site_for_{sgRNA_name}.pdf"), bbox_inches="tight"
@@ -1255,7 +1265,7 @@ def run_crispresso(args):
 
     if args.guide_seq:
         cut_points = []
-        sgRNA_intervals = []
+        sg_rna_intervals = []
         offset_plots = []
         sgRNA_sequences = []
 
@@ -1285,7 +1295,7 @@ def run_crispresso(args):
                     reverse_complement(current_guide_seq), args.amplicon_seq
                 )
             ]
-            sgRNA_intervals += [
+            sg_rna_intervals += [
                 (m.start(), m.start() + len(current_guide_seq) - 1)
                 for m in re.finditer(current_guide_seq, args.amplicon_seq)
             ] + [
@@ -1304,12 +1314,11 @@ def run_crispresso(args):
                 "not present in the amplicon sequence! "
                 "\n\nPlease check your input!"
             )
-        else:
-            info(f"Cut Points from guide seq:{cut_points}")
+        info(f"Cut Points from guide seq:{cut_points}")
 
     else:
         cut_points = []
-        sgRNA_intervals = []
+        sg_rna_intervals = []
         offset_plots = np.array([])
         sgRNA_sequences = []
 
@@ -1380,7 +1389,7 @@ def run_crispresso(args):
     ###FRAMESHIFT SUPPORT###
     if args.coding_seq:
 
-        PERFORM_FRAMESHIFT_ANALYSIS = True
+        perform_frameshift_analysis = True
 
         exon_positions = set()
         exon_intervals = []
@@ -1422,7 +1431,7 @@ def run_crispresso(args):
         splicing_positions = set(splicing_positions).difference(exon_positions)
 
     else:
-        PERFORM_FRAMESHIFT_ANALYSIS = False
+        perform_frameshift_analysis = False
 
     # we have insertions/deletions that change the concatenated
     # exon sequence lenght and the difference between the final sequence
@@ -1459,24 +1468,24 @@ def run_crispresso(args):
     else:
         database_id = args.name
 
-    OUTPUT_DIRECTORY = f"CRISPResso_on_{database_id}"
+    output_directory = f"CRISPResso_on_{database_id}"
 
     if args.output_folder:
-        OUTPUT_DIRECTORY = os.path.join(
-            os.path.abspath(args.output_folder), OUTPUT_DIRECTORY
+        output_directory = os.path.join(
+            os.path.abspath(args.output_folder), output_directory
         )
 
     _jp = lambda filename: os.path.join(
-        OUTPUT_DIRECTORY, filename
+        output_directory, filename
     )  # handy function to put a file in the output directory
     log_filename = _jp("CRISPResso_RUNNING_LOG.txt")
 
     try:
-        os.makedirs(OUTPUT_DIRECTORY)
-        info(f"Creating Folder {OUTPUT_DIRECTORY}")
+        os.makedirs(output_directory)
+        info(f"Creating Folder {output_directory}")
         info("Done!")
     except Exception:
-        warn(f"Folder {OUTPUT_DIRECTORY} already exists.")
+        warn(f"Folder {output_directory} already exists.")
 
     finally:
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
@@ -1493,26 +1502,22 @@ def run_crispresso(args):
                 "The option --split_paired_end is available "
                 "only when a single fastq file is specified!"
             )
-        else:
-            info("Splitting paired end single fastq file in two files...")
-            args.fastq_r1, args.fastq_r2 = split_paired_end_reads_single_file(
-                args.fastq_r1,
-                output_filename_r1=_jp(
-                    os.path.basename(args.fastq_r1.replace(".fastq", "")).replace(
-                        ".gz", ""
-                    )
-                    + "_splitted_r1.fastq.gz"
-                ),
-                output_filename_r2=_jp(
-                    os.path.basename(args.fastq_r1.replace(".fastq", "")).replace(
-                        ".gz", ""
-                    )
-                    + "_splitted_r2.fastq.gz"
-                ),
-            )
-            splitted_files_to_remove = [args.fastq_r1, args.fastq_r2]
 
-            info("Done!")
+        info("Splitting paired end single fastq file in two files...")
+        args.fastq_r1, args.fastq_r2 = split_paired_end_reads_single_file(
+            args.fastq_r1,
+            output_filename_r1=_jp(
+                os.path.basename(args.fastq_r1.replace(".fastq", "")).replace(".gz", "")
+                + "_splitted_r1.fastq.gz"
+            ),
+            output_filename_r2=_jp(
+                os.path.basename(args.fastq_r1.replace(".fastq", "")).replace(".gz", "")
+                + "_splitted_r2.fastq.gz"
+            ),
+        )
+        splitted_files_to_remove = [args.fastq_r1, args.fastq_r2]
+
+        info("Done!")
 
     if args.min_average_read_quality > 0 or args.min_single_bp_quality > 0:
         info(
@@ -1573,9 +1578,9 @@ def run_crispresso(args):
                 f"{options_str} >>{log_filename} 2>&1"
             )
             # print cmd
-            TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
+            trimmomatic_status = sb.call(cmd, shell=True)
 
-            if TRIMMOMATIC_STATUS:
+            if trimmomatic_status:
                 raise TrimmomaticException(
                     "TRIMMOMATIC failed to run, please check the log file."
                 )
@@ -1603,8 +1608,8 @@ def run_crispresso(args):
                 f"{args.trimmomatic_options_string} >>{log_filename} 2>&1"
             )
             # print cmd
-            TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
-            if TRIMMOMATIC_STATUS:
+            trimmomatic_status = sb.call(cmd, shell=True)
+            if trimmomatic_status:
                 raise TrimmomaticException(
                     "TRIMMOMATIC failed to run, please check the log file."
                 )
@@ -1630,11 +1635,11 @@ def run_crispresso(args):
             f"--allow-outies --max-overlap {args.max_paired_end_reads_overlap} "
             f"--min-overlap {args.min_paired_end_reads_overlap} "
             f"-f {len_amplicon} -r {avg_read_length} "
-            f"-s {std_fragment_length}  -z -d {OUTPUT_DIRECTORY} >>{log_filename} 2>&1"
+            f"-s {std_fragment_length}  -z -d {output_directory} >>{log_filename} 2>&1"
         )
 
-        FLASH_STATUS = sb.call(cmd, shell=True)
-        if FLASH_STATUS:
+        flash_status = sb.call(cmd, shell=True)
+        if flash_status:
             raise FlashException("Flash failed to run, please check the log file.")
 
         info("Done!")
@@ -1663,16 +1668,16 @@ def run_crispresso(args):
     # write .fa file only for amplicon the rest we pipe trough awk on the fly!
 
     with open(database_fasta_filename, "wt", encoding="utf-8") as outfile:
-        outfile.write(">%s\n%s\n" % (database_id, args.amplicon_seq))
+        outfile.write(f">{database_id}\n{args.amplicon_seq}\n")
 
     if args.expected_hdr_amplicon_seq:
-        database_repair_fasta_filename = _jp("%s_database_repair.fa" % database_id)
+        database_repair_fasta_filename = _jp(f"{database_id}_database_repair.fa")
         needle_output_repair_filename = _jp(
-            "needle_output_repair_%s.txt.gz" % database_id
+            f"needle_output_repair_{database_id}.txt.gz"
         )
 
         with open(database_repair_fasta_filename, "wt", encoding="utf-8") as outfile:
-            outfile.write(">%s\n%s\n" % (database_id, args.expected_hdr_amplicon_seq))
+            outfile.write(f">{database_id}\n{args.expected_hdr_amplicon_seq}\n")
 
     def parse_needle_output(needle_filename, name="seq", just_score=False):
         needle_data = []
@@ -1752,8 +1757,8 @@ def run_crispresso(args):
                         "align_seq",
                     ],
                 ).set_index("ID")
-        except Exception:
-            raise NeedleException("Failed to parse the output of needle!")
+        except Exception as exc:
+            raise NeedleException("Failed to parse the output of needle!") from exc
 
     info("Aligning sequences...")
     # Alignment here
@@ -1771,8 +1776,8 @@ def run_crispresso(args):
         f"| gzip >{needle_output_filename}"
     )
 
-    NEEDLE_OUTPUT = sb.call(cmd, shell=True)
-    if NEEDLE_OUTPUT:
+    needle_output = sb.call(cmd, shell=True)
+    if needle_output:
         raise NeedleException("Needle failed to run, please check the log file.")
 
     # If we have a donor sequence we just compare
@@ -1791,9 +1796,9 @@ def run_crispresso(args):
             f"{args.needle_options_string} 2>> {log_filename}  "
             f"| gzip >{needle_output_repair_filename}"
         )
-        NEEDLE_OUTPUT = sb.call(cmd_repair, shell=True)
+        needle_output = sb.call(cmd_repair, shell=True)
 
-        if NEEDLE_OUTPUT:
+        if needle_output:
             raise NeedleException("Needle failed to run, please " "check the log file.")
         info("Done!")
 
@@ -1849,11 +1854,11 @@ def run_crispresso(args):
         outfile = gzip.open(fasta_not_aligned_filename, "wt")
 
         for x0, x1 in sr_not_aligned.items():
-            outfile.write(">%s\n%s\n" % (x0, x1))
+            outfile.write(f">{x0}\n{x1}\n")
 
         # write reverse complement of ampl and expected amplicon
-        database_rc_fasta_filename = _jp("%s_database_rc.fa" % database_id)
-        needle_output_rc_filename = _jp("needle_output_rc_%s.txt.gz" % database_id)
+        database_rc_fasta_filename = _jp(f"{database_id}_database_rc.fa")
+        needle_output_rc_filename = _jp(f"needle_output_rc_{database_id}.txt.gz")
 
         info("Align sequences to reverse complement of the amplicon...")
 
@@ -1886,8 +1891,8 @@ def run_crispresso(args):
             f"| gzip >{needle_output_rc_filename}"
         )
 
-        NEEDLE_OUTPUT = sb.call(cmd, shell=True)
-        if NEEDLE_OUTPUT:
+        needle_output = sb.call(cmd, shell=True)
+        if needle_output:
             raise NeedleException("Needle failed to run, please check the log file.")
 
         if args.expected_hdr_amplicon_seq:
@@ -1899,8 +1904,8 @@ def run_crispresso(args):
                 f"| gzip >{needle_output_repair_rc_filename}"
             )
 
-            NEEDLE_OUTPUT = sb.call(cmd, shell=True)
-            if NEEDLE_OUTPUT:
+            needle_output = sb.call(cmd, shell=True)
+            if needle_output:
                 raise NeedleException(
                     "Needle failed to run, please check the log file."
                 )
@@ -2007,7 +2012,7 @@ def run_crispresso(args):
             "excluding these bp for the indel quantification..."
         )
 
-        def ignore_N_in_alignment(row):
+        def ignore_n_in_alignment(row):
             row["align_str"] = "".join(
                 [
                     ("|" if (row["ref_seq"][idx] == "N") else c)
@@ -2019,7 +2024,7 @@ def run_crispresso(args):
 
             return row
 
-        df_needle_alignment = df_needle_alignment.apply(ignore_N_in_alignment, axis=1)
+        df_needle_alignment = df_needle_alignment.apply(ignore_n_in_alignment, axis=1)
 
     #####QUANTIFICATION START
     def compute_ref_positions(ref_seq):
@@ -2219,7 +2224,7 @@ def run_crispresso(args):
     avg_vector_ins_all[np.isinf(avg_vector_ins_all)] = 0
     avg_vector_del_all[np.isinf(avg_vector_del_all)] = 0
 
-    if PERFORM_FRAMESHIFT_ANALYSIS:
+    if perform_frameshift_analysis:
         if not dict(hist_inframe):
             hist_inframe = {0: 0}
 
@@ -2384,10 +2389,10 @@ def run_crispresso(args):
         _, texts, autotexts = ax1.pie(
             [n_unmodified, n_mixed_hdr_nhej, n_modified, n_repaired],
             labels=[
-                "Unmodified\n(%d reads)" % n_unmodified,
-                "Mixed HDR-NHEJ\n(%d reads)" % n_mixed_hdr_nhej,
-                "NHEJ\n(%d reads)" % n_modified,
-                "HDR\n(%d reads)" % n_repaired,
+                f"Unmodified\n({n_unmodified} reads)",
+                f"Mixed HDR-NHEJ\n({n_mixed_hdr_nhej} reads)",
+                f"NHEJ\n({n_modified} reads)",
+                f"HDR\n({n_repaired} reads)",
             ],
             explode=(0, 0, 0, 0),
             colors=[(1, 0, 0, 0.2), (0, 1, 1, 0.2), (0, 0, 1, 0.2), (0, 1, 0, 0.2)],
@@ -2417,10 +2422,10 @@ def run_crispresso(args):
                     label="Predicted Cas9 cleavage site/s",
                 )
 
-            for idx, sgRNA_int in enumerate(sgRNA_intervals):
+            for idx, sg_rna_int in enumerate(sg_rna_intervals):
                 if idx == 0:
                     ax2.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -2428,7 +2433,7 @@ def run_crispresso(args):
                     )
                 else:
                     ax2.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -2467,8 +2472,8 @@ def run_crispresso(args):
         _, texts, autotexts = ax1.pie(
             [n_unmodified / n_total * 100, n_modified / n_total * 100],
             labels=[
-                "Unmodified\n(%d reads)" % n_unmodified,
-                "NHEJ\n(%d reads)" % n_modified,
+                f"Unmodified\n({n_unmodified} reads)",
+                f"NHEJ\n({n_modified} reads)",
             ],
             explode=(0, 0),
             colors=[(1, 0, 0, 0.2), (0, 0, 1, 0.2)],
@@ -2480,10 +2485,10 @@ def run_crispresso(args):
             ax2.plot([0, len_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence")
             # plt.hold(True)
 
-            for idx, sgRNA_int in enumerate(sgRNA_intervals):
+            for idx, sg_rna_int in enumerate(sg_rna_intervals):
                 if idx == 0:
                     ax2.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -2492,7 +2497,7 @@ def run_crispresso(args):
                     )
                 else:
                     ax2.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -2592,10 +2597,7 @@ def run_crispresso(args):
     )  # np.arange(0,y_max,y_max/6.0)
     plt.yticks(
         y_label_values,
-        [
-            "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
-            for n_reads in y_label_values
-        ],
+        [f"{n_reads / n_total * 100}%% ({n_reads})" for n_reads in y_label_values],
     )
 
     ax = fig.add_subplot(1, 3, 2)
@@ -2711,10 +2713,10 @@ def run_crispresso(args):
                     label="_nolegend_",
                 )
 
-        for idx, sgRNA_int in enumerate(sgRNA_intervals):
+        for idx, sg_rna_int in enumerate(sg_rna_intervals):
             if idx == 0:
                 plt.plot(
-                    [sgRNA_int[0], sgRNA_int[1]],
+                    [sg_rna_int[0], sg_rna_int[1]],
                     [0, 0],
                     lw=10,
                     c=(0, 0, 0, 0.15),
@@ -2723,7 +2725,7 @@ def run_crispresso(args):
                 )
             else:
                 plt.plot(
-                    [sgRNA_int[0], sgRNA_int[1]],
+                    [sg_rna_int[0], sg_rna_int[1]],
                     [0, 0],
                     lw=10,
                     c=(0, 0, 0, 0.15),
@@ -2744,7 +2746,7 @@ def run_crispresso(args):
     plt.yticks(
         y_label_values,
         [
-            "%.1f%% (%d)" % (n_reads / float(n_total) * 100, n_reads)
+            f"%.1f%% (%d)" % (n_reads / float(n_total) * 100, n_reads)
             for n_reads in y_label_values
         ],
     )
@@ -2811,10 +2813,10 @@ def run_crispresso(args):
                     label="_nolegend_",
                 )
 
-        for idx, sgRNA_int in enumerate(sgRNA_intervals):
+        for idx, sg_rna_int in enumerate(sg_rna_intervals):
             if idx == 0:
                 plt.plot(
-                    [sgRNA_int[0], sgRNA_int[1]],
+                    [sg_rna_int[0], sg_rna_int[1]],
                     [0, 0],
                     lw=10,
                     c=(0, 0, 0, 0.15),
@@ -2823,7 +2825,7 @@ def run_crispresso(args):
                 )
             else:
                 plt.plot(
-                    [sgRNA_int[0], sgRNA_int[1]],
+                    [sg_rna_int[0], sg_rna_int[1]],
                     [0, 0],
                     lw=10,
                     c=(0, 0, 0, 0.15),
@@ -2925,10 +2927,10 @@ def run_crispresso(args):
                         label="_nolegend_",
                     )
 
-            for idx, sgRNA_int in enumerate(sgRNA_intervals):
+            for idx, sg_rna_int in enumerate(sg_rna_intervals):
                 if idx == 0:
                     plt.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -2937,7 +2939,7 @@ def run_crispresso(args):
                     )
                 else:
                     plt.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -3038,10 +3040,10 @@ def run_crispresso(args):
                         label="_nolegend_",
                     )
 
-            for idx, sgRNA_int in enumerate(sgRNA_intervals):
+            for idx, sg_rna_int in enumerate(sg_rna_intervals):
                 if idx == 0:
                     plt.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -3050,7 +3052,7 @@ def run_crispresso(args):
                     )
                 else:
                     plt.plot(
-                        [sgRNA_int[0], sgRNA_int[1]],
+                        [sg_rna_int[0], sg_rna_int[1]],
                         [0, 0],
                         lw=10,
                         c=(0, 0, 0, 0.15),
@@ -3209,7 +3211,7 @@ def run_crispresso(args):
 
     pdf.savefig()  # saves the current figure into a pdf page
 
-    if PERFORM_FRAMESHIFT_ANALYSIS:
+    if perform_frameshift_analysis:
 
         # make frameshift plots
         fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
@@ -3326,7 +3328,7 @@ def run_crispresso(args):
         plt.ylabel("%")
 
         ax2 = fig.add_subplot(2, 1, 2)
-        x, y = map(np.array, zip(*[a for a in hist_inframe.items()]))
+        x, y = map(np.array, zip(*list(hist_inframe.items())))
         y = y / float(sum(hist_inframe.values())) * 100
         ax2.bar(x - 0.5, y, color=(0, 1, 1, 0.2))
         ax2.set_xlim(-30.5, 30.5)
@@ -3340,7 +3342,7 @@ def run_crispresso(args):
         )  # labels along the bottom edge are off)
         ax2.yaxis.tick_left()
         xmin, xmax = ax2.xaxis.get_view_interval()
-        ymin, ymax = ax2.yaxis.get_view_interval()
+
         ax2.set_xticklabels(
             [str(idx) for idx in [idx for idx in range(-30, 31) if (idx % 3 == 0)]],
             rotation="vertical",
@@ -3446,10 +3448,10 @@ def run_crispresso(args):
                         label="_nolegend_",
                     )
 
-                for idx, sgRNA_int in enumerate(sgRNA_intervals):
+                for idx, sg_rna_int in enumerate(sg_rna_intervals):
                     if idx == 0:
                         plt.plot(
-                            [sgRNA_int[0], sgRNA_int[1]],
+                            [sg_rna_int[0], sg_rna_int[1]],
                             [0, 0],
                             lw=10,
                             c=(0, 0, 0, 0.15),
@@ -3458,7 +3460,7 @@ def run_crispresso(args):
                         )
                     else:
                         plt.plot(
-                            [sgRNA_int[0], sgRNA_int[1]],
+                            [sg_rna_int[0], sg_rna_int[1]],
                             [0, 0],
                             lw=10,
                             c=(0, 0, 0, 0.15),
@@ -3515,7 +3517,7 @@ def run_crispresso(args):
             header=True,
         )
         plot_alleles_table(
-            args, cut_point, df_allele_around_cut, sgRNA, OUTPUT_DIRECTORY
+            args, cut_point, df_allele_around_cut, sgRNA, output_directory
         )
 
         pdf.savefig()
@@ -3706,7 +3708,7 @@ def run_crispresso(args):
             f"\nREADS ALIGNED:{n_total}"
         )
 
-    if PERFORM_FRAMESHIFT_ANALYSIS:
+    if perform_frameshift_analysis:
         with open(_jp("Frameshift_analysis.txt"), "wt", encoding="utf-8") as outfile:
             outfile.write(
                 "Frameshift analysis:\n\t"
@@ -3783,9 +3785,9 @@ def run_crispresso(args):
         )
 
     if cut_points:
-        pickle.dump(sgRNA_intervals, open(_jp("sgRNA_intervals.pickle"), "wb"))
+        pickle.dump(sg_rna_intervals, open(_jp("sg_rna_intervals.pickle"), "wb"))
 
-    if sgRNA_intervals:
+    if sg_rna_intervals:
         pickle.dump(cut_points, open(_jp("cut_points.pickle"), "wb"))
 
     if offset_plots.any():
