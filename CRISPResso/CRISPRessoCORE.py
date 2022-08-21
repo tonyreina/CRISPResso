@@ -13,6 +13,7 @@ from typing import List
 import sys
 import errno
 import os
+from shutil import which
 import subprocess as sb
 import argparse
 import re
@@ -72,34 +73,6 @@ def check_library(library_name: str):
         raise Exception(
             f"You need to install {library_name} to use CRISPResso!"
         ) from exc
-
-
-def which(program: str) -> str:
-    """Checks if program is executable
-
-    Args:
-        program(str): Name of the program to check
-
-    Returns:
-        Name of the program or None if not found
-    """
-
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-    fpath, _ = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"')
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-    return None
-
 
 def check_program(binary_name: str, download_url: str = None):
     """Checks if program exists
@@ -1501,7 +1474,8 @@ def run_crispresso(args):
 
         with open(log_filename, "wt", encoding="utf-8") as outfile:
             outfile.write(
-                f"[Command used]:\nCRISPResso {sys.argv}\n\n[Execution log]:\n"
+                f"[Command used]:\nCRISPResso {sys.argv}\n\n"
+                f"Args: {repr(args)}\n\n[Execution log]:\n"
             )
 
     if args.split_paired_end:

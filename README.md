@@ -31,43 +31,29 @@ The CRISPResso suite accommodates single or pooled amplicon deep sequencing, WGS
 
 ## Installation and Requirements
 
-To install the command line version of CRISPResso, some dependencies must be installed before running the setup:
+The best way to install the command line version of CRISPResso is to use a `conda` environment. You can install `conda` by downloading and installing it from [Anaconda](https://anaconda.org/) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html)]. Conda is useful because there is a rich collection of pre-built bioinformatics Python packages at [Bioconda](https://bioconda.github.io/).
 
-1. Python 3+
-2. Java: http://java.com/download
+1. In the CRISPResso root folder type `conda env create -f environment.yml`
+2. Make sure that the Java Runtime Environment is installed. On Ubuntu try to run `java --help`. If that results in an error then install Java with:
 
-On Ubuntu:
 ```bash
 
-apt-get update && apt-get install default-jre samtools bowtie2 make gcc g++ zlib1g-dev zlib1g unzip -y
+apt-get update && apt-get install default-jre make gcc g++ zlib1g-dev zlib1g unzip -y
 ```
 
-3. C compiler / make. For Mac with OSX 10.7 or greater, open the terminal app and type and execute the command `make`, which will trigger the installation of OSX developer tools. Windows systems are not officially supported, although CRISPResso may work with [Cygwin](https://www.cygwin.com/).
-
-After checking that the required software is installed you can install CRISPResso from the official Python repository following these steps:
-
-1. Open a terminal window
-2. Type the command: 
+3. After checking that the required software is installed you can install CRISPResso from the official Python repository following these steps:
 
 ```bash
 
+conda activate crispresso-env
 pip install CRISPResso  --no-use-wheel --verbose
 ```
 
-3. Close the terminal window 
+The setup will try to install these software for you:
 
-Alternatively if want to install the package without the PIP utility:
-
-1. Download the setup file: https://github.com/tonyreina/CRISPResso/archive/master.zip and decompress it  
-2. Open a terminal window  and go to the folder where you have decompressed the zip file
-3. Type the command: `python setup.py install`
-4. Close the terminal window and open a new one  (this is important in order to setup correctly the PATH variable in your system).
-
-The Setup will try to install these software for you:
-
-1. Trimmomatic(tested with v0.33): http://www.usadellab.org/cms/?page=trimmomatic
-2. Flash(tested with v1.2.11): http://ccb.jhu.edu/software/FLASH/
-3. Needle from the EMBOSS suite(tested with 6.6.0): ftp://emboss.open-bio.org/pub/EMBOSS/
+1. [Trimmomatic](https://anaconda.org/bioconda/trimmomatic): tested with v0.39
+2. [Flash](https://anaconda.org/bioconda/flash): tested with v1.2.11
+3. [Needle from the EMBOSS suite](https://anaconda.org/bioconda/emboss): tested with the European Molecular Biology Open Software Suite (Emboss) v6.6.0
 
 If the setup fails on your machine you have to install them manually and put these utilities/binary files in your path!
 
@@ -690,3 +676,105 @@ If you use CRISPResso in your work please cite:
 ## Acknowledgements
 
 We are grateful to Feng Zhang and David Scott for useful feedback and suggestions; the FAS Research Computing Team, in particular Daniel Kelleher, for great support in hosting the web application of CRISPResso; and Sorel Fitz-Gibbon from UCLA for help in sharing data. Finally, we thank all members of the Guo-Cheng Yuan lab for testing the software.
+
+## Testing Conda Environment
+
+```bash
+name: crispresso-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=conda_forge
+  - _openmp_mutex=4.5=2_gnu
+  - alsa-lib=1.2.6.1=h7f98852_0
+  - biopython=1.79=py310h5764c6d_2
+  - bzip2=1.0.8=h7f98852_4
+  - ca-certificates=2022.6.15=ha878542_0
+  - cairo=1.16.0=ha61ee94_1012
+  - emboss=6.6.0=h86d058a_5
+  - expat=2.4.8=h27087fc_0
+  - flash=1.2.11=h27826a3_0
+  - font-ttf-dejavu-sans-mono=2.37=hab24e00_0
+  - font-ttf-inconsolata=3.000=h77eed37_0
+  - font-ttf-source-code-pro=2.038=h77eed37_0
+  - font-ttf-ubuntu=0.83=hab24e00_0
+  - fontconfig=2.14.0=h8e229c2_0
+  - fonts-conda-ecosystem=1=0
+  - fonts-conda-forge=1=0
+  - freetype=2.12.1=hca18f0e_0
+  - gettext=0.19.8.1=h73d1719_1008
+  - giflib=5.2.1=h36c2ea0_2
+  - graphite2=1.3.13=h58526e2_1001
+  - harfbuzz=5.1.0=hf9f4e7c_0
+  - icu=70.1=h27087fc_0
+  - jpeg=9e=h166bdaf_2
+  - keyutils=1.6.1=h166bdaf_0
+  - krb5=1.19.3=h08a2579_0
+  - lcms2=2.12=hddcbb42_0
+  - ld_impl_linux-64=2.36.1=hea4e1c9_2
+  - lerc=4.0.0=h27087fc_0
+  - libblas=3.9.0=16_linux64_openblas
+  - libcblas=3.9.0=16_linux64_openblas
+  - libcups=2.3.3=h3e49a29_2
+  - libdeflate=1.13=h166bdaf_0
+  - libedit=3.1.20191231=he28a2e2_2
+  - libffi=3.4.2=h7f98852_5
+  - libgcc-ng=12.1.0=h8d9b700_16
+  - libgd=2.3.3=h18fbbfe_3
+  - libgfortran-ng=12.1.0=h69a702a_16
+  - libgfortran5=12.1.0=hdcd56e2_16
+  - libglib=2.72.1=h2d90d5f_0
+  - libgomp=12.1.0=h8d9b700_16
+  - libiconv=1.16=h516909a_0
+  - liblapack=3.9.0=16_linux64_openblas
+  - libnsl=2.0.0=h7f98852_0
+  - libopenblas=0.3.21=pthreads_h78a6416_2
+  - libpng=1.6.37=h753d276_4
+  - libsqlite=3.39.2=h753d276_1
+  - libstdcxx-ng=12.1.0=ha89aaad_16
+  - libtiff=4.4.0=h0e0dad5_3
+  - libuuid=2.32.1=h7f98852_1000
+  - libwebp=1.2.4=h522a892_0
+  - libwebp-base=1.2.4=h166bdaf_0
+  - libxcb=1.13=h7f98852_1004
+  - libzlib=1.2.12=h166bdaf_2
+  - ncurses=6.3=h27087fc_1
+  - numpy=1.23.2=py310h53a5b5f_0
+  - openjdk=17.0.3=h1e1ecb3_1
+  - openssl=3.0.5=h166bdaf_1
+  - pcre=8.45=h9c3ff4c_0
+  - pip=22.2.2=pyhd8ed1ab_0
+  - pixman=0.40.0=h36c2ea0_0
+  - pthread-stubs=0.4=h36c2ea0_1001
+  - python=3.10.5=ha86cf86_0_cpython
+  - python_abi=3.10=2_cp310
+  - readline=8.1.2=h0f457ee_0
+  - setuptools=65.1.1=py310hff52083_0
+  - sqlite=3.39.2=h4ff8645_1
+  - tk=8.6.12=h27826a3_0
+  - trimmomatic=0.39=hdfd78af_2
+  - tzdata=2022c=h191b570_0
+  - wheel=0.37.1=pyhd8ed1ab_0
+  - xorg-fixesproto=5.0=h7f98852_1002
+  - xorg-inputproto=2.3.2=h7f98852_1002
+  - xorg-kbproto=1.0.7=h7f98852_1002
+  - xorg-libice=1.0.10=h7f98852_0
+  - xorg-libsm=1.2.3=hd9c2040_1000
+  - xorg-libx11=1.7.2=h7f98852_0
+  - xorg-libxau=1.0.9=h7f98852_0
+  - xorg-libxdmcp=1.1.3=h7f98852_0
+  - xorg-libxext=1.3.4=h7f98852_1
+  - xorg-libxfixes=5.0.3=h7f98852_1004
+  - xorg-libxi=1.7.10=h7f98852_0
+  - xorg-libxrender=0.9.10=h7f98852_1003
+  - xorg-libxtst=1.2.3=h7f98852_1002
+  - xorg-recordproto=1.14.2=h7f98852_1002
+  - xorg-renderproto=0.11.1=h7f98852_1002
+  - xorg-xextproto=7.3.0=h7f98852_1002
+  - xorg-xproto=7.0.31=h7f98852_1007
+  - xz=5.2.6=h166bdaf_0
+  - zlib=1.2.12=h166bdaf_2
+  - zstd=1.5.2=h6239696_4
+```
