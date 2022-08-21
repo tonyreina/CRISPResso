@@ -42,11 +42,11 @@ logging.basicConfig(
     filemode="w",
 )
 error = logging.critical
-warn = logging.warning
+warning = logging.warning
 debug = logging.debug
 info = logging.info
 
-####Support functions###
+# ###Support functions###
 
 
 def get_data(path: str) -> str:
@@ -276,7 +276,7 @@ def filter_pe_fastq_by_qual(
         fastq_filtered_outfile_r1 = gzip.open(output_filename_r1, "wt")
 
         for record in SeqIO.parse(fastq_handle_r1, "fastq"):
-            if not record.id in ids_to_remove:
+            if record.id not in ids_to_remove:
                 fastq_filtered_outfile_r1.write(record.format("fastq"))
     except Exception as exc:
         raise Exception("Error handling the fastq_filtered_outfile_r1") from exc
@@ -285,7 +285,7 @@ def filter_pe_fastq_by_qual(
         fastq_filtered_outfile_r2 = gzip.open(output_filename_r2, "wt")
 
         for record in SeqIO.parse(fastq_handle_r2, "fastq"):
-            if not record.id in ids_to_remove:
+            if record.id not in ids_to_remove:
                 fastq_filtered_outfile_r2.write(record.format("fastq"))
     except Exception as exc:
         raise Exception("Error handling the fastq_filtered_outfile_r2") from exc
@@ -393,63 +393,72 @@ sns.set_context("poster")
 sns.set(font_scale=2.2)
 sns.set_style("white")
 
-###EXCEPTIONS############################
-class FlashException(Exception):
+# ##EXCEPTIONS############################
+
+
+class FlashException(Exception):  # pragma: no cover
     pass
 
 
-class TrimmomaticException(Exception):
+class TrimmomaticException(Exception):  # pragma: no cover
     pass
 
 
-class NeedleException(Exception):
+class NeedleException(Exception):  # pragma: no cover
     pass
 
 
-class NoReadsAlignedException(Exception):
+class NoReadsAlignedException(Exception):  # pragma: no cover
     pass
 
 
-class DonorSequenceException(Exception):
+class DonorSequenceException(Exception):  # pragma: no cover
     pass
 
 
-class AmpliconEqualDonorException(Exception):
+class AmpliconEqualDonorException(Exception):  # pragma: no cover
     pass
 
 
-class CoreDonorSequenceNotContainedException(Exception):
+class CoreDonorSequenceNotContainedException(Exception):  # pragma: no cover
     pass
 
 
-class CoreDonorSequenceNotUniqueException(Exception):
+class CoreDonorSequenceNotUniqueException(Exception):  # pragma: no cover
     pass
 
 
-class SgRNASequenceException(Exception):
+class SgRNASequenceException(Exception):  # pragma: no cover
     pass
 
 
-class NTException(Exception):
+class NTException(Exception):  # pragma: no cover
     pass
 
 
-class ExonSequenceException(Exception):
+class ExonSequenceException(Exception):  # pragma: no cover
     pass
 
 
-class DuplicateSequenceIdException(Exception):
+class DuplicateSequenceIdException(Exception):  # pragma: no cover
     pass
 
 
-class NoReadsAfterQualityFiltering(Exception):
+class NoReadsAfterQualityFiltering(Exception):  # pragma: no cover
     pass
 
 
-#########################################
+# ########################################
 
 
 def process_df_chunk(chunk_input):
+    """Process one chunk of the dataframe
+
+    Using multiple processes and imap to
+    parallelize the dataframe processing.
+    (Not sure if this is necessary)
+
+    """
 
     df_needle_alignment_chunk = chunk_input[0]
     args = chunk_input[1]
@@ -549,7 +558,7 @@ def process_df_chunk(chunk_input):
             if insertion_positions:
                 insertion_positions_flat = np.hstack(insertion_positions)
 
-        ########CLASSIFY READ
+        # #######CLASSIFY READ
         # WE HAVE THE DONOR SEQUENCE
         if args.expected_hdr_amplicon_seq:
 
@@ -592,7 +601,7 @@ def process_df_chunk(chunk_input):
             else:
                 df_needle_alignment_chunk.loc[idx_row, "UNMODIFIED"] = True
 
-        ###CREATE AVERAGE SIGNALS, HERE WE SHOW EVERYTHING...
+        # ##CREATE AVERAGE SIGNALS, HERE WE SHOW EVERYTHING...
         if df_needle_alignment_chunk.loc[idx_row, "MIXED"]:
             effect_vector_mutation_mixed[substitution_positions] += 1
             effect_vector_deletion_mixed[deletion_positions_flat] += 1
@@ -622,7 +631,8 @@ def process_df_chunk(chunk_input):
         ).astype(int)
         effect_vector_any[any_positions] += 1
 
-        # For NHEJ we count only the events that overlap the window specified around
+        # For NHEJ we count only the events that overlap
+        # the window specified around
         # the cut site (1bp by default)...
         if df_needle_alignment_chunk.loc[idx_row, "NHEJ"] and args.window_around_sgrna:
 
@@ -664,7 +674,7 @@ def process_df_chunk(chunk_input):
             effect_vector_deletion[deletion_positions_flat] += 1
             effect_vector_insertion[insertion_positions_flat] += 1
 
-        ####QUANTIFICATION AND FRAMESHIFT ANALYSIS
+        # ###QUANTIFICATION AND FRAMESHIFT ANALYSIS
         if not df_needle_alignment_chunk.loc[idx_row, "UNMODIFIED"]:
 
             df_needle_alignment_chunk.loc[idx_row, "n_mutated"] = len(
@@ -732,7 +742,8 @@ def process_df_chunk(chunk_input):
                             modified_frameshift += 1
                             hist_frameshift[effetive_length] += 1
 
-                # the indels and subtitutions are outside the exon/s  so we don't care!
+                # the indels and subtitutions are outside the exon/s
+                # so we don't care!
                 else:
                     non_modified_non_frameshift += 1
                     effect_vector_insertion_noncoding[insertion_positions_flat] += 1
@@ -922,7 +933,7 @@ class Custom_HeatMapper(sns.matrix._HeatMapper):
                 ax.text(x, y, annotation, **text_kwargs)
 
     # removed the colobar
-    def plot(self, ax, cax, kws):
+    def plot(self, ax, kws):
         """Draw the heatmap on the provided Axes."""
         # Remove all the Axes spines
         sns.utils.despine(ax=ax, left=True, bottom=True)
@@ -1007,7 +1018,7 @@ def custom_heatmap(
         ax = plt.gca()
     if square:
         ax.set_aspect("equal")
-    plotter.plot(ax, cbar_ax, kwargs)
+    plotter.plot(ax, kwargs)
     return ax
 
 
@@ -1015,7 +1026,7 @@ def plot_alleles_table(
     args,
     cut_point,
     df_alleles,
-    sgRNA_name,
+    sg_rna_name,
     output_directory,
     min_frequency: float = 0.5,
     max_n_rows: int = 100,
@@ -1031,21 +1042,21 @@ def plot_alleles_table(
     alpha = 0.5
 
     get_color = lambda x, y, z: (x / 255.0, y / 255.0, z / 255.0, alpha)
-    A_color = get_color(127, 201, 127)
-    T_color = get_color(190, 174, 212)
-    C_color = get_color(253, 192, 134)
-    G_color = get_color(255, 255, 153)
-    N_color = get_color(255, 255, 255)
-    INDEL_color = get_color(230, 230, 230)
+    a_color = get_color(127, 201, 127)
+    t_color = get_color(190, 174, 212)
+    c_color = get_color(253, 192, 134)
+    g_color = get_color(255, 255, 153)
+    n_color = get_color(255, 255, 255)
+    indel_color = get_color(230, 230, 230)
 
     cmap = colors_mpl.ListedColormap(
-        [INDEL_color, A_color, T_color, C_color, G_color, N_color]
+        [indel_color, a_color, t_color, c_color, g_color, n_color]
     )
 
     dna_to_numbers = {"-": 0, "A": 1, "T": 2, "C": 3, "G": 4, "N": 5}
     seq_to_numbers = lambda seq: [dna_to_numbers[x] for x in seq]
 
-    X = []
+    x_labels = []
     annot = []
     y_labels = []
     lines = defaultdict(list)
@@ -1058,7 +1069,7 @@ def plot_alleles_table(
     for idx, row in df_alleles.loc[df_alleles["%Reads"] >= min_frequency][
         :max_n_rows
     ].iterrows():
-        X.append(seq_to_numbers(str.upper(idx)))
+        x_labels.append(seq_to_numbers(str.upper(idx)))
         annot.append(list(idx))
         y_labels.append(f"{row['%Reads']}% ({row['#Reads']} reads)")
 
@@ -1080,11 +1091,9 @@ def plot_alleles_table(
         per_element_annot_kws.append(to_append)
 
     ref_seq_around_cut = reference_seq[
-        cut_point
-        - offset_around_cut_to_plot
-        + 1 : cut_point
-        + offset_around_cut_to_plot
-        + 1
+        (cut_point - offset_around_cut_to_plot + 1) : (
+            cut_point + offset_around_cut_to_plot + 1
+        )
     ]
 
     per_element_annot_kws = np.vstack(per_element_annot_kws[::-1])
@@ -1092,16 +1101,16 @@ def plot_alleles_table(
     ref_seq_annot_hm = np.expand_dims(list(ref_seq_around_cut), 1).T
 
     annot = annot[::-1]
-    X = X[::-1]
+    x_labels = x_labels[::-1]
 
     sns.set_context("poster")
 
-    N_ROWS = len(X)
-    N_COLUMNS = offset_around_cut_to_plot * 2
+    n_rows = len(x_labels)
+    n_cols = offset_around_cut_to_plot * 2
 
-    plt.figure(figsize=(offset_around_cut_to_plot * 0.6, (N_ROWS + 1) * 0.6))
-    gs1 = gridspec.GridSpec(N_ROWS + 1, N_COLUMNS)
-    gs2 = gridspec.GridSpec(N_ROWS + 1, N_COLUMNS)
+    plt.figure(figsize=(offset_around_cut_to_plot * 0.6, (n_rows + 1) * 0.6))
+    gs1 = gridspec.GridSpec(n_rows + 1, n_cols)
+    gs2 = gridspec.GridSpec(n_rows + 1, n_cols)
 
     ax_hm_ref = plt.subplot(gs1[0, :])
     ax_hm = plt.subplot(gs2[1:, :])
@@ -1118,7 +1127,7 @@ def plot_alleles_table(
         square=True,
     )
     custom_heatmap(
-        X,
+        x_labels,
         annot=np.array(annot),
         annot_kws={"size": 16},
         cmap=cmap,
@@ -1142,18 +1151,18 @@ def plot_alleles_table(
     # create boxes for ins
     for idx, lss in lines.items():
         for ls in lss:
-            for l in ls:
-                ax_hm.vlines([l], N_ROWS - idx - 1, N_ROWS - idx, color="red", lw=3)
+            for line in ls:
+                ax_hm.vlines([line], n_rows - idx - 1, n_rows - idx, color="red", lw=3)
 
-            ax_hm.hlines(N_ROWS - idx - 1, ls[0], ls[1], color="red", lw=3)
-            ax_hm.hlines(N_ROWS - idx, ls[0], ls[1], color="red", lw=3)
+            ax_hm.hlines(n_rows - idx - 1, ls[0], ls[1], color="red", lw=3)
+            ax_hm.hlines(n_rows - idx, ls[0], ls[1], color="red", lw=3)
 
     ax_hm_ref.yaxis.tick_right()
     ax_hm_ref.xaxis.set_ticks([])
     ax_hm_ref.yaxis.set_ticklabels(["Reference"], rotation=True)
 
     gs2.update(
-        left=0, right=1, hspace=0.05, wspace=0, top=1 * (((N_ROWS) * 1.13)) / (N_ROWS)
+        left=0, right=1, hspace=0.05, wspace=0, top=1 * (((n_rows) * 1.13)) / (n_rows)
     )
     gs1.update(
         left=0,
@@ -1221,11 +1230,11 @@ def plot_alleles_table(
     _jp = lambda filename: os.path.join(output_directory, filename)
 
     plt.savefig(
-        _jp(f"9.Alleles_around_cut_site_for_{sgRNA_name}.pdf"), bbox_inches="tight"
+        _jp(f"9.Alleles_around_cut_site_for_{sg_rna_name}.pdf"), bbox_inches="tight"
     )
     if args.save_also_png:
         plt.savefig(
-            _jp(f"9.Alleles_around_cut_site_for_{sgRNA_name}.png"),
+            _jp(f"9.Alleles_around_cut_site_for_{sg_rna_name}.png"),
             bbox_inches="tight",
             pad_inches=1,
         )
@@ -1248,7 +1257,7 @@ def run_crispresso(args):
     if args.name:
         clean_name = slugify(args.name)
         if args.name != clean_name:
-            warn(
+            warning(
                 f"The specified name {args.name} contained "
                 f"characters not allowed and was changed to: {clean_name}"
             )
@@ -1386,7 +1395,7 @@ def run_crispresso(args):
             )
         core_donor_seq_st_en = positions_core_donor_seq[0]
 
-    ###FRAMESHIFT SUPPORT###
+    # ##FRAMESHIFT SUPPORT###
     if args.coding_seq:
 
         perform_frameshift_analysis = True
@@ -1485,7 +1494,7 @@ def run_crispresso(args):
         info(f"Creating Folder {output_directory}")
         info("Done!")
     except Exception:
-        warn(f"Folder {output_directory} already exists.")
+        warning(f"Folder {output_directory} already exists.")
 
     finally:
         logging.getLogger().addHandler(logging.FileHandler(log_filename))
@@ -2740,13 +2749,12 @@ def run_crispresso(args):
         fancybox=True,
         shadow=True,
     )
-    ylabel_values = np.arange(0, 1, 1.0 / 6.0)
     if y_max > 0:
         y_label_values = np.arange(0, y_max, y_max / 6.0)
     plt.yticks(
         y_label_values,
         [
-            f"%.1f%% (%d)" % (n_reads / float(n_total) * 100, n_reads)
+            f"{n_reads / float(n_total) * 100}%% ({n_reads})"
             for n_reads in y_label_values
         ],
     )
@@ -3316,7 +3324,6 @@ def run_crispresso(args):
         )  # labels along the bottom edge are off)
         ax1.yaxis.tick_left()
         xmin, xmax = ax1.get_xaxis().get_view_interval()
-        ymin, ymax = ax1.get_yaxis().get_view_interval()
         ax1.set_xticklabels(
             [str(idx) for idx in [idx for idx in range(-30, 31) if idx % 3]],
             rotation="vertical",
@@ -3409,7 +3416,6 @@ def run_crispresso(args):
         # non coding
         plt.figure(figsize=(10, 10))
         plt.plot(effect_vector_insertion_noncoding, "r", lw=3, label="Insertions")
-        # plt.hold(True)
         plt.plot(effect_vector_deletion_noncoding, "m", lw=3, label="Deletions")
         plt.plot(effect_vector_mutation_noncoding, "g", lw=3, label="Substitutions")
 
