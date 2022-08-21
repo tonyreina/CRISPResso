@@ -438,10 +438,10 @@ def process_df_chunk(chunk_input):
     df_needle_alignment_chunk = chunk_input[0]
     args = chunk_input[1]
 
-    MODIFIED_FRAMESHIFT = 0
-    MODIFIED_NON_FRAMESHIFT = 0
-    NON_MODIFIED_NON_FRAMESHIFT = 0
-    SPLICING_SITES_MODIFIED = 0
+    modified_frameshift = 0
+    modified_non_frameshift = 0
+    non_modified_non_frameshift = 0
+    splicing_sites_modified = 0
 
     # INITIALIZATIONS
     if args.coding_seq:
@@ -696,29 +696,29 @@ def process_df_chunk(chunk_input):
                     current_read_spliced_modified = True
 
                 if current_read_spliced_modified:
-                    SPLICING_SITES_MODIFIED += 1
+                    splicing_sites_modified += 1
 
                 # if modified check if frameshift
                 if current_read_exons_modified:
 
                     if not lenght_modified_positions_exons:
                         # there are no indels
-                        MODIFIED_NON_FRAMESHIFT += 1
+                        modified_non_frameshift += 1
                         hist_inframe[0] += 1
                     else:
 
                         effetive_length = sum(lenght_modified_positions_exons)
 
                         if (effetive_length % 3) == 0:
-                            MODIFIED_NON_FRAMESHIFT += 1
+                            modified_non_frameshift += 1
                             hist_inframe[effetive_length] += 1
                         else:
-                            MODIFIED_FRAMESHIFT += 1
+                            modified_frameshift += 1
                             hist_frameshift[effetive_length] += 1
 
                 # the indels and subtitutions are outside the exon/s  so we don't care!
                 else:
-                    NON_MODIFIED_NON_FRAMESHIFT += 1
+                    non_modified_non_frameshift += 1
                     effect_vector_insertion_noncoding[insertion_positions_flat] += 1
                     effect_vector_deletion_noncoding[deletion_positions_flat] += 1
                     effect_vector_mutation_noncoding[substitution_positions] += 1
@@ -745,10 +745,10 @@ def process_df_chunk(chunk_input):
         hist_frameshift,
         avg_vector_del_all,
         avg_vector_ins_all,
-        MODIFIED_FRAMESHIFT,
-        MODIFIED_NON_FRAMESHIFT,
-        NON_MODIFIED_NON_FRAMESHIFT,
-        SPLICING_SITES_MODIFIED,
+        modified_frameshift,
+        modified_non_frameshift,
+        non_modified_non_frameshift,
+        splicing_sites_modified,
     )
 
 
@@ -1050,7 +1050,7 @@ def plot_alleles_table(
     ].iterrows():
         X.append(seq_to_numbers(str.upper(idx)))
         annot.append(list(idx))
-        y_labels.append("%.2f%% (%d reads)" % (row["%Reads"], row["#Reads"]))
+        y_labels.append(f"{row['%Reads']}% ({row['#Reads']} reads)")
 
         for p in re_find_indels.finditer(row["Reference_Sequence"]):
             lines[idx_row].append((p.start(), p.end()))
@@ -1211,11 +1211,11 @@ def plot_alleles_table(
     _jp = lambda filename: os.path.join(OUTPUT_DIRECTORY, filename)
 
     plt.savefig(
-        _jp("9.Alleles_around_cut_site_for_%s.pdf" % sgRNA_name), bbox_inches="tight"
+        _jp(f"9.Alleles_around_cut_site_for_{sgRNA_name}.pdf"), bbox_inches="tight"
     )
     if args.save_also_png:
         plt.savefig(
-            _jp("9.Alleles_around_cut_site_for_%s.png" % sgRNA_name),
+            _jp(f"9.Alleles_around_cut_site_for_{sgRNA_name}.png"),
             bbox_inches="tight",
             pad_inches=1,
         )
@@ -1249,9 +1249,7 @@ def run_crispresso(args):
     args.amplicon_seq = args.amplicon_seq.upper().strip().rstrip("\n")
     wrong_nt = find_wrong_nt(args.amplicon_seq)
     if wrong_nt:
-        raise NTException(
-            f"The amplicon sequence contains wrong characters:%s" % " ".join(wrong_nt)
-        )
+        raise NTException(f"The amplicon sequence contains wrong characters:{wrong_nt}")
 
     len_amplicon = len(args.amplicon_seq)
 
@@ -1273,8 +1271,7 @@ def run_crispresso(args):
             wrong_nt = find_wrong_nt(current_guide_seq)
             if wrong_nt:
                 raise NTException(
-                    "The sgRNA sequence contains wrong characters:%s"
-                    % " ".join(wrong_nt)
+                    f"The sgRNA sequence contains wrong characters:{wrong_nt}"
                 )
 
             offset_fw = args.cleavage_offset + len(current_guide_seq) - 1
@@ -1308,7 +1305,7 @@ def run_crispresso(args):
                 "\n\nPlease check your input!"
             )
         else:
-            info("Cut Points from guide seq:%s" % cut_points)
+            info(f"Cut Points from guide seq:{cut_points}")
 
     else:
         cut_points = []
@@ -1356,7 +1353,7 @@ def run_crispresso(args):
         wrong_nt = find_wrong_nt(args.donor_seq)
         if wrong_nt:
             raise NTException(
-                "The donor sequence contains wrong characters:%s" % " ".join(wrong_nt)
+                f"The donor sequence contains wrong characters:{wrong_nt}"
             )
 
         if args.donor_seq not in args.expected_hdr_amplicon_seq:
@@ -1370,7 +1367,7 @@ def run_crispresso(args):
         positions_core_donor_seq = [
             (m.start(), m.start() + len(args.donor_seq))
             for m in re.finditer(
-                "(?=%s)" % args.donor_seq, args.expected_hdr_amplicon_seq
+                f"(?={args.donor_seq})", args.expected_hdr_amplicon_seq
             )
         ]
         if len(positions_core_donor_seq) > 1:
@@ -1395,8 +1392,7 @@ def run_crispresso(args):
             wrong_nt = find_wrong_nt(exon_seq)
             if wrong_nt:
                 raise NTException(
-                    "The coding sequence contains wrong characters:%s"
-                    % " ".join(wrong_nt)
+                    f"The coding sequence contains wrong characters:{wrong_nt}"
                 )
 
             st_exon = args.amplicon_seq.find(exon_seq)
@@ -1431,19 +1427,19 @@ def run_crispresso(args):
     # we have insertions/deletions that change the concatenated
     # exon sequence lenght and the difference between the final sequence
     # and the original sequence lenght is not a multiple of 3
-    MODIFIED_FRAMESHIFT = 0
+    modified_frameshift = 0
 
     # we have insertions/deletions that change the concatenated
     # exon sequence lenght and the difference between the final sequence
     # and the original sequence lenght is a multiple of 3. We
     # are in this case also when no indels are present but we have
     # substitutions
-    MODIFIED_NON_FRAMESHIFT = 0
+    modified_non_frameshift = 0
 
     # we don't touch the exons at all, the read can be still modified tough..
-    NON_MODIFIED_NON_FRAMESHIFT = 0
+    non_modified_non_frameshift = 0
 
-    SPLICING_SITES_MODIFIED = 0
+    splicing_sites_modified = 0
 
     ################
 
@@ -1520,8 +1516,9 @@ def run_crispresso(args):
 
     if args.min_average_read_quality > 0 or args.min_single_bp_quality > 0:
         info(
-            "Filtering reads with average bp quality < %d and single bp quality < %d ..."
-            % (args.min_average_read_quality, args.min_single_bp_quality)
+            "Filtering reads with average "
+            f"bp quality < {args.min_average_read_quality} "
+            f"and single bp quality < {args.min_single_bp_quality} ..."
         )
         if args.fastq_r2 != "":
             args.fastq_r1, args.fastq_r2 = filter_pe_fastq_by_qual(
@@ -1565,15 +1562,15 @@ def run_crispresso(args):
             output_forward_filename = symlink_filename
         else:
             output_forward_filename = _jp("reads.trimmed.fq.gz")
+            options_str = args.trimmomatic_options_string.replace(
+                "NexteraPE-PE.fa", "TruSeq3-SE.fa"
+            )
             # Trimming with trimmomatic
-            cmd = "java -jar %s SE -phred33 %s  %s %s >>%s 2>&1" % (
-                get_data("trimmomatic-0.33.jar"),
-                args.fastq_r1,
-                output_forward_filename,
-                args.trimmomatic_options_string.replace(
-                    "NexteraPE-PE.fa", "TruSeq3-SE.fa"
-                ),
-                log_filename,
+            cmd = (
+                f"java -jar {get_data('trimmomatic-0.33.jar')} "
+                f"SE -phred33 {args.fastq_r1}  "
+                f"{output_forward_filename} "
+                f"{options_str} >>{log_filename} 2>&1"
             )
             # print cmd
             TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
@@ -1598,16 +1595,12 @@ def run_crispresso(args):
             output_reverse_unpaired_filename = _jp("output_reverse_unpaired.fq.gz")
 
             # Trimming with trimmomatic
-            cmd = "java -jar %s PE -phred33 %s  %s %s  %s  %s  %s %s >>%s 2>&1" % (
-                get_data("trimmomatic-0.33.jar"),
-                args.fastq_r1,
-                args.fastq_r2,
-                output_forward_paired_filename,
-                output_forward_unpaired_filename,
-                output_reverse_paired_filename,
-                output_reverse_unpaired_filename,
-                args.trimmomatic_options_string,
-                log_filename,
+            cmd = (
+                f"java -jar {get_data('trimmomatic-0.33.jar')} "
+                f"PE -phred33 {args.fastq_r1}  {args.fastq_r2} "
+                f"{output_forward_paired_filename}  {output_forward_unpaired_filename} "
+                f" {output_reverse_paired_filename}  {output_reverse_unpaired_filename} "
+                f"{args.trimmomatic_options_string} >>{log_filename} 2>&1"
             )
             # print cmd
             TRIMMOMATIC_STATUS = sb.call(cmd, shell=True)
@@ -1654,9 +1647,9 @@ def run_crispresso(args):
         processed_output_filename = _jp("out.extendedFrags.fastq.gz")
 
     # count reads
-    N_READS_INPUT = get_n_reads_fastq(args.fastq_r1)
-    N_READS_AFTER_PREPROCESSING = get_n_reads_fastq(processed_output_filename)
-    if N_READS_AFTER_PREPROCESSING == 0:
+    n_reads_input = get_n_reads_fastq(args.fastq_r1)
+    n_reads_after_preprocessing = get_n_reads_fastq(processed_output_filename)
+    if n_reads_after_preprocessing == 0:
         raise NoReadsAfterQualityFiltering(
             "No reads in input or no reads survived the average or single bp quality filtering."
         )
@@ -1664,8 +1657,8 @@ def run_crispresso(args):
     info("Preparing files for the alignment...")
     # parsing flash output and prepare the files for alignment
 
-    database_fasta_filename = _jp("%s_database.fa" % database_id)
-    needle_output_filename = _jp("needle_output_%s.txt.gz" % database_id)
+    database_fasta_filename = _jp(f"{database_id}_database.fa")
+    needle_output_filename = _jp(f"needle_output_{database_id}.txt.gz")
 
     # write .fa file only for amplicon the rest we pipe trough awk on the fly!
 
@@ -1759,7 +1752,7 @@ def run_crispresso(args):
                         "align_seq",
                     ],
                 ).set_index("ID")
-        except:
+        except Exception:
             raise NeedleException("Failed to parse the output of needle!")
 
     info("Aligning sequences...")
@@ -1815,10 +1808,6 @@ def run_crispresso(args):
 
         del df_database
         del df_database_repair
-
-        # filter bad alignments
-
-        N_TOTAL_ALSO_UNALIGNED = df_database_and_repair.shape[0] * 1.0
 
         # find reads that failed to align and try on the reverse complement
         sr_not_aligned = df_database_and_repair.loc[
@@ -2003,9 +1992,9 @@ def run_crispresso(args):
     df_needle_alignment["n_inserted"] = 0
     df_needle_alignment["n_deleted"] = 0
 
-    N_TOTAL = df_needle_alignment.shape[0]
+    n_total = df_needle_alignment.shape[0]
 
-    if N_TOTAL == 0:
+    if n_total == 0:
         raise NoReadsAlignedException(
             "Zero sequences aligned, please check your amplicon sequence"
         )
@@ -2053,8 +2042,6 @@ def run_crispresso(args):
     )
 
     # INITIALIZATIONS
-    re_find_indels = re.compile("(-*-)")
-    re_find_substitutions = re.compile(r"(\.*\.)")
 
     effect_vector_insertion = np.zeros(len_amplicon)
     effect_vector_deletion = np.zeros(len_amplicon)
@@ -2146,10 +2133,10 @@ def run_crispresso(args):
                 hist_frameshift_chunk,
                 avg_vector_del_all_chunk,
                 avg_vector_ins_all_chunk,
-                MODIFIED_FRAMESHIFT_chunk,
-                MODIFIED_NON_FRAMESHIFT_chunk,
-                NON_MODIFIED_NON_FRAMESHIFT_chunk,
-                SPLICING_SITES_MODIFIED_chunk,
+                modified_frameshift_chunk,
+                modified_non_frameshift_chunk,
+                non_modified_non_frameshift_chunk,
+                splicing_sites_modified_chunk,
             ) = result
 
             chunks_computed.append(df_needle_alignment_chunk)
@@ -2170,10 +2157,10 @@ def run_crispresso(args):
             add_hist(hist_frameshift_chunk, hist_frameshift)
             avg_vector_del_all += avg_vector_del_all_chunk
             avg_vector_ins_all += avg_vector_ins_all_chunk
-            MODIFIED_FRAMESHIFT += MODIFIED_FRAMESHIFT_chunk
-            MODIFIED_NON_FRAMESHIFT += MODIFIED_NON_FRAMESHIFT_chunk
-            NON_MODIFIED_NON_FRAMESHIFT += NON_MODIFIED_NON_FRAMESHIFT_chunk
-            SPLICING_SITES_MODIFIED += SPLICING_SITES_MODIFIED_chunk
+            modified_frameshift += modified_frameshift_chunk
+            modified_non_frameshift += modified_non_frameshift_chunk
+            non_modified_non_frameshift += non_modified_non_frameshift_chunk
+            splicing_sites_modified += splicing_sites_modified_chunk
 
         pool.close()
         pool.join()
@@ -2200,21 +2187,21 @@ def run_crispresso(args):
             hist_frameshift,
             avg_vector_del_all,
             avg_vector_ins_all,
-            MODIFIED_FRAMESHIFT,
-            MODIFIED_NON_FRAMESHIFT,
-            NON_MODIFIED_NON_FRAMESHIFT,
-            SPLICING_SITES_MODIFIED,
+            modified_frameshift,
+            modified_non_frameshift,
+            non_modified_non_frameshift,
+            splicing_sites_modified,
         ) = process_df_chunk([df_needle_alignment, args])
 
-    N_MODIFIED = df_needle_alignment["NHEJ"].sum()
-    N_UNMODIFIED = df_needle_alignment["UNMODIFIED"].sum()
-    N_MIXED_HDR_NHEJ = df_needle_alignment["MIXED"].sum()
-    N_REPAIRED = df_needle_alignment["HDR"].sum()
+    n_modified = df_needle_alignment["NHEJ"].sum()
+    n_unmodified = df_needle_alignment["UNMODIFIED"].sum()
+    n_mixed_hdr_nhej = df_needle_alignment["MIXED"].sum()
+    n_repaired = df_needle_alignment["HDR"].sum()
 
     # disable known division warning
     with np.errstate(divide="ignore", invalid="ignore"):
 
-        effect_vector_combined = 100.0 * effect_vector_any / float(N_TOTAL)
+        effect_vector_combined = 100.0 * effect_vector_any / float(n_total)
 
         avg_vector_ins_all /= (
             effect_vector_insertion
@@ -2284,7 +2271,6 @@ def run_crispresso(args):
         },
         inplace=True,
     )
-    # df_alleles.set_index('Aligned_Sequence',inplace=True)
     df_alleles["%Reads"] = df_alleles["#Reads"] / df_alleles["#Reads"].sum() * 100.0
 
     df_alleles.sort_values(by="#Reads", ascending=False, inplace=True)
@@ -2396,12 +2382,12 @@ def run_crispresso(args):
         fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
         ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
         _, texts, autotexts = ax1.pie(
-            [N_UNMODIFIED, N_MIXED_HDR_NHEJ, N_MODIFIED, N_REPAIRED],
+            [n_unmodified, n_mixed_hdr_nhej, n_modified, n_repaired],
             labels=[
-                "Unmodified\n(%d reads)" % N_UNMODIFIED,
-                "Mixed HDR-NHEJ\n(%d reads)" % N_MIXED_HDR_NHEJ,
-                "NHEJ\n(%d reads)" % N_MODIFIED,
-                "HDR\n(%d reads)" % N_REPAIRED,
+                "Unmodified\n(%d reads)" % n_unmodified,
+                "Mixed HDR-NHEJ\n(%d reads)" % n_mixed_hdr_nhej,
+                "NHEJ\n(%d reads)" % n_modified,
+                "HDR\n(%d reads)" % n_repaired,
             ],
             explode=(0, 0, 0, 0),
             colors=[(1, 0, 0, 0.2), (0, 1, 1, 0.2), (0, 0, 1, 0.2), (0, 1, 0, 0.2)],
@@ -2479,10 +2465,10 @@ def run_crispresso(args):
         fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
         ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
         _, texts, autotexts = ax1.pie(
-            [N_UNMODIFIED / N_TOTAL * 100, N_MODIFIED / N_TOTAL * 100],
+            [n_unmodified / n_total * 100, n_modified / n_total * 100],
             labels=[
-                "Unmodified\n(%d reads)" % N_UNMODIFIED,
-                "NHEJ\n(%d reads)" % N_MODIFIED,
+                "Unmodified\n(%d reads)" % n_unmodified,
+                "NHEJ\n(%d reads)" % n_modified,
             ],
             explode=(0, 0),
             colors=[(1, 0, 0, 0.2), (0, 0, 1, 0.2)],
@@ -2602,12 +2588,12 @@ def run_crispresso(args):
     lgd.legendHandles[1].set_height(6)
     plt.xlim(xmin=-1)
     y_label_values = np.round(
-        np.linspace(0, min(N_TOTAL, max(ax.get_yticks())), 6)
+        np.linspace(0, min(n_total, max(ax.get_yticks())), 6)
     )  # np.arange(0,y_max,y_max/6.0)
     plt.yticks(
         y_label_values,
         [
-            "%.1f%% (%d)" % (n_reads / N_TOTAL * 100, n_reads)
+            "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
             for n_reads in y_label_values
         ],
     )
@@ -2632,12 +2618,12 @@ def run_crispresso(args):
     lgd.legendHandles[1].set_height(6)
     plt.xlim(xmax=1)
     y_label_values = np.round(
-        np.linspace(0, min(N_TOTAL, max(ax.get_yticks())), 6)
+        np.linspace(0, min(n_total, max(ax.get_yticks())), 6)
     )  # np.arange(0,y_max,y_max/6.0)
     plt.yticks(
         y_label_values,
         [
-            "%.1f%% (%d)" % (n_reads / N_TOTAL * 100, n_reads)
+            "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
             for n_reads in y_label_values
         ],
     )
@@ -2662,12 +2648,12 @@ def run_crispresso(args):
     lgd.legendHandles[1].set_height(6)
     plt.xlim(xmin=-1)
     y_label_values = np.round(
-        np.linspace(0, min(N_TOTAL, max(ax.get_yticks())), 6)
+        np.linspace(0, min(n_total, max(ax.get_yticks())), 6)
     )  # np.arange(0,y_max,y_max/6.0)
     plt.yticks(
         y_label_values,
         [
-            "%.1f%% (%d)" % (n_reads / N_TOTAL * 100, n_reads)
+            "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
             for n_reads in y_label_values
         ],
     )
@@ -2758,7 +2744,7 @@ def run_crispresso(args):
     plt.yticks(
         y_label_values,
         [
-            "%.1f%% (%d)" % (n_reads / float(N_TOTAL) * 100, n_reads)
+            "%.1f%% (%d)" % (n_reads / float(n_total) * 100, n_reads)
             for n_reads in y_label_values
         ],
     )
@@ -2860,8 +2846,8 @@ def run_crispresso(args):
         [
             "%.1f%% (%.1f%% , %d)"
             % (
-                n_reads / float(N_TOTAL) * 100,
-                n_reads / float(N_MODIFIED) * 100,
+                n_reads / float(n_total) * 100,
+                n_reads / float(n_modified) * 100,
                 n_reads,
             )
             for n_reads in y_label_values
@@ -2974,8 +2960,8 @@ def run_crispresso(args):
             [
                 "%.1f%% (%.1f%% , %d)"
                 % (
-                    n_reads / float(N_TOTAL) * 100.0,
-                    n_reads / float(N_REPAIRED) * 100.0,
+                    n_reads / float(n_total) * 100.0,
+                    n_reads / float(n_repaired) * 100.0,
                     n_reads,
                 )
                 for n_reads in y_label_values
@@ -3087,8 +3073,8 @@ def run_crispresso(args):
             [
                 "%.1f%% (%.1f%% , %d)"
                 % (
-                    n_reads / float(N_TOTAL) * 100.0,
-                    n_reads / float(N_MIXED_HDR_NHEJ) * 100.0,
+                    n_reads / float(n_total) * 100.0,
+                    n_reads / float(n_mixed_hdr_nhej) * 100.0,
                     n_reads,
                 )
                 for n_reads in y_label_values
@@ -3173,7 +3159,7 @@ def run_crispresso(args):
     plt.setp(markerline, "markerfacecolor", "m", "markersize", 8)
     plt.setp(baseline, "linewidth", 0)
     plt.setp(stemlines, "color", "m", "linewidth", 3)
-    # plt.hold(True)
+
     y_max = max(avg_vector_del_all) * 1.2
     if cut_points:
 
@@ -3230,14 +3216,14 @@ def run_crispresso(args):
         ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
         _, texts, autotexts = ax1.pie(
             [
-                MODIFIED_FRAMESHIFT,
-                MODIFIED_NON_FRAMESHIFT,
-                NON_MODIFIED_NON_FRAMESHIFT,
+                modified_frameshift,
+                modified_non_frameshift,
+                non_modified_non_frameshift,
             ],
             labels=[
-                "Frameshift mutation\n(%d reads)" % MODIFIED_FRAMESHIFT,
-                "In-frame mutation\n(%d reads)" % MODIFIED_NON_FRAMESHIFT,
-                "Noncoding mutation\n(%d reads)" % NON_MODIFIED_NON_FRAMESHIFT,
+                f"Frameshift mutation\n({modified_frameshift} reads)",
+                f"In-frame mutation\n({modified_non_frameshift} reads)",
+                f"Noncoding mutation\n({non_modified_non_frameshift} reads)",
             ],
             explode=(0.0, 0.0, 0.0),
             colors=[
@@ -3385,13 +3371,12 @@ def run_crispresso(args):
         ax = fig.add_subplot(1, 1, 1)
         _, texts, autotexts = ax.pie(
             [
-                SPLICING_SITES_MODIFIED,
-                (df_needle_alignment.shape[0] - SPLICING_SITES_MODIFIED),
+                splicing_sites_modified,
+                (df_needle_alignment.shape[0] - splicing_sites_modified),
             ],
             labels=[
-                "Potential splice sites modified\n(%d reads)" % SPLICING_SITES_MODIFIED,
-                "Unmodified\n(%d reads)"
-                % (df_needle_alignment.shape[0] - SPLICING_SITES_MODIFIED),
+                f"Potential splice sites modified\n({splicing_sites_modified}) reads)",
+                f"Unmodified\n({df_needle_alignment.shape[0] - splicing_sites_modified} reads)",
             ],
             explode=(0.0, 0),
             colors=[
@@ -3525,7 +3510,7 @@ def run_crispresso(args):
 
         # write alleles table to file
         df_allele_around_cut.to_csv(
-            _jp("Alleles_frequency_table_around_cut_site_for_%s.txt" % sgRNA),
+            _jp(f"Alleles_frequency_table_around_cut_site_for_{sgRNA}.txt"),
             sep="\t",
             header=True,
         )
@@ -3608,14 +3593,14 @@ def run_crispresso(args):
                 else:
                     os.remove(file_to_remove)
             except:
-                warn("Skipping:%s" % file_to_remove)
+                warn(f"Skipping:{file_to_remove}")
 
     # write effect vectors as plain text files
     info("Saving processed data...")
 
     def save_vector_to_file(vector, name):
         np.savetxt(
-            _jp("%s.txt" % name),
+            _jp(f"{name}.txt"),
             np.vstack([(np.arange(len(vector)) + 1), vector]).T,
             fmt=["%d", "%.18e"],
             delimiter="\t",
@@ -3685,27 +3670,27 @@ def run_crispresso(args):
         outfile.write(
             (
                 "Quantification of editing frequency:\n\t- "
-                f"Unmodified:{N_UNMODIFIED} reads\n"
+                f"Unmodified:{n_unmodified} reads\n"
             )
             + (
-                f"\t- NHEJ:{N_MODIFIED} reads "
+                f"\t- NHEJ:{n_modified} reads "
                 f"({nhej_inserted} reads with insertions, "
                 f"{nhej_deleted} reads with deletions, "
                 f"{nhej_mutated} reads with substitutions)\n"
             )
             + (
-                f"\t- HDR:{N_REPAIRED} reads "
+                f"\t- HDR:{n_repaired} reads "
                 f"({hdr_inserted} reads with insertions, "
                 f"{hdr_deleted} reads with deletions, "
                 f"{hdr_mutated} reads with substitutions)\n"
             )
             + (
-                f"\t- Mixed HDR-NHEJ:{N_MIXED_HDR_NHEJ} reads "
+                f"\t- Mixed HDR-NHEJ:{n_mixed_hdr_nhej} reads "
                 f"({mixed_inserted} reads with insertions, "
                 f"{mixed_deleted} reads with deletions, "
                 f"{mixed_mutated} reads with substitutions)\n\n"
             )
-            + (f"Total Aligned:{N_TOTAL} reads ")
+            + (f"Total Aligned:{n_total} reads ")
         )
 
     # write alleles table
@@ -3716,26 +3701,26 @@ def run_crispresso(args):
     # write statistics
     with open(_jp("Mapping_statistics.txt"), "wt", encoding="utf-8") as outfile:
         outfile.write(
-            f"READS IN INPUTS:{N_READS_INPUT}\n"
-            f"READS AFTER PREPROCESSING:{N_READS_AFTER_PREPROCESSING}"
-            f"\nREADS ALIGNED:{N_TOTAL}"
+            f"READS IN INPUTS:{n_reads_input}\n"
+            f"READS AFTER PREPROCESSING:{n_reads_after_preprocessing}"
+            f"\nREADS ALIGNED:{n_total}"
         )
 
     if PERFORM_FRAMESHIFT_ANALYSIS:
         with open(_jp("Frameshift_analysis.txt"), "wt", encoding="utf-8") as outfile:
             outfile.write(
                 "Frameshift analysis:\n\t"
-                f"Noncoding mutation:{NON_MODIFIED_NON_FRAMESHIFT} reads\n\t"
-                f"In-frame mutation:{MODIFIED_NON_FRAMESHIFT} reads\n\t"
-                f"Frameshift mutation:{MODIFIED_FRAMESHIFT} reads\n"
+                f"Noncoding mutation:{non_modified_non_frameshift} reads\n\t"
+                f"In-frame mutation:{modified_non_frameshift} reads\n\t"
+                f"Frameshift mutation:{modified_frameshift} reads\n"
             )
 
         with open(_jp("Splice_sites_analysis.txt"), "wt", encoding="utf-8") as outfile:
-            unmodified = df_needle_alignment.shape[0] - SPLICING_SITES_MODIFIED
+            unmodified = df_needle_alignment.shape[0] - splicing_sites_modified
             outfile.write(
                 "Splice sites analysis:\n\t"
                 f"Unmodified:{unmodified} reads\n\t"
-                f"Potential splice sites modified:{SPLICING_SITES_MODIFIED} reads\n"
+                f"Potential splice sites modified:{splicing_sites_modified} reads\n"
             )
 
         save_vector_to_file(
@@ -3760,29 +3745,36 @@ def run_crispresso(args):
         avg_vector_del_all, "position_dependent_vector_avg_deletion_size"
     )
 
-    pd.DataFrame(
+    df_indels = pd.DataFrame(
         np.vstack([hlengths, hdensity]).T, columns=["indel_size", "fq"]
-    ).to_csv(_jp("indel_histogram.txt"), index=None, sep="\t")
-    pd.DataFrame(
+    )
+    df_indels.to_csv(_jp("indel_histogram.txt"), index=None, sep="\t")
+
+    df_insertion = pd.DataFrame(
         np.vstack([x_bins_ins[:-1], y_values_ins]).T, columns=["ins_size", "fq"]
-    ).to_csv(_jp("insertion_histogram.txt"), index=None, sep="\t")
-    pd.DataFrame(
+    )
+    df_insertion.to_csv(_jp("insertion_histogram.txt"), index=None, sep="\t")
+
+    df_deletion = pd.DataFrame(
         np.vstack([-x_bins_del[:-1], y_values_del]).T, columns=["del_size", "fq"]
-    ).to_csv(_jp("deletion_histogram.txt"), index=None, sep="\t")
-    pd.DataFrame(
+    )
+    df_deletion.to_csv(_jp("deletion_histogram.txt"), index=None, sep="\t")
+
+    df_substitution = pd.DataFrame(
         np.vstack([x_bins_mut[:-1], y_values_mut]).T, columns=["sub_size", "fq"]
-    ).to_csv(_jp("substitution_histogram.txt"), index=None, sep="\t")
+    )
+    df_substitution.to_csv(_jp("substitution_histogram.txt"), index=None, sep="\t")
 
     if args.expected_hdr_amplicon_seq:
         save_vector_to_file(
-            effect_vector_insertion_mixed, "effect_vector_insertion_mixed_HDR_NHEJ"
+            effect_vector_insertion_mixed, "effect_vector_insertion_mixed_hdr_nhej"
         )
         save_vector_to_file(
-            effect_vector_deletion_mixed, "effect_vector_deletion_mixed_HDR_NHEJ"
+            effect_vector_deletion_mixed, "effect_vector_deletion_mixed_hdr_nhej"
         )
         save_vector_to_file(
             effect_vector_mutation_mixed,
-            "effect_vector_substitution_mixed_HDR_NHEJ",
+            "effect_vector_substitution_mixed_hdr_nhej",
         )
         save_vector_to_file(effect_vector_insertion_hdr, "effect_vector_insertion_HDR")
         save_vector_to_file(effect_vector_deletion_hdr, "effect_vector_deletion_HDR")
@@ -3816,15 +3808,15 @@ def run_crispresso(args):
 
         if args.expected_hdr_amplicon_seq:
             np.savez(
-                _jp("effect_vector_insertion_mixed_HDR_NHEJ"),
+                _jp("effect_vector_insertion_mixed_hdr_nhej"),
                 effect_vector_insertion_mixed,
             )
             np.savez(
-                _jp("effect_vector_deletion_mixed_HDR_NHEJ"),
+                _jp("effect_vector_deletion_mixed_hdr_nhej"),
                 effect_vector_deletion_mixed,
             )
             np.savez(
-                _jp("effect_vector_substitution_mixed_HDR_NHEJ"),
+                _jp("effect_vector_substitution_mixed_hdr_nhej"),
                 effect_vector_mutation_mixed,
             )
 
@@ -3845,13 +3837,20 @@ def run_crispresso(args):
     )
 
     return (
-        N_UNMODIFIED,
-        N_MIXED_HDR_NHEJ,
-        N_MODIFIED,
-        N_REPAIRED,
+        n_total,
+        n_reads_input,
+        n_unmodified,
+        n_mixed_hdr_nhej,
+        n_modified,
+        n_repaired,
         nhej_inserted,
         nhej_deleted,
         nhej_mutated,
+        df_indels,
+        df_insertion,
+        df_deletion,
+        df_substitution,
+        df_alleles,
     )
 
 

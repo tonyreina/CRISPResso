@@ -44,7 +44,7 @@ class args:
     coding_seq = ""
     min_average_read_quality = 0
     min_single_bp_quality = 0
-    min_identity_score = 30.0
+    min_identity_score = 60.0
     split_paired_end = False
     trim_sequences = True
     trimmomatic_options_string = (
@@ -169,11 +169,9 @@ def test_check_program():
 
 @pytest.mark.parametrize(
     "p,keep_intermediate,trim_sequences",
-    [(1, True, True), (2, False, True)] #, (8, True, False)],
+    [(1, True, True), (2, False, True), (8, True, False)],
 )
-def test_run_crispresso(
-    p, keep_intermediate, trim_sequences
-):
+def test_run_crispresso(p, keep_intermediate, trim_sequences):
     """Run end-to-end command"""
 
     args.fastq_r1 = "test_data/test_L001_R1_001.fastq.gz"
@@ -182,5 +180,36 @@ def test_run_crispresso(
     args.keep_intermediate = keep_intermediate
     args.output_folder = f"pytest_p{p}"
     args.trim_sequences = trim_sequences
-   
-    assert cr.run_crispresso(args) == (6880, 0, 1175, 0, 164, 768, 520)
+
+    (
+        n_total,
+        n_reads_input,
+        n_unmodified,
+        n_mixed_hdr_nhej,
+        n_modified,
+        n_repaired,
+        nhej_inserted,
+        nhej_deleted,
+        nhej_mutated,
+        df_indels,
+        df_insertion,
+        df_deletion,
+        df_substitution,
+        df_alleles
+    ) = cr.run_crispresso(args)
+
+    assert n_total == 7058
+    assert n_reads_input == 8906
+    assert n_unmodified == 6853
+    assert n_mixed_hdr_nhej == 0
+    assert n_modified == 205
+    assert n_repaired == 0
+    assert nhej_inserted == 0
+    assert nhej_deleted == 12
+    assert nhej_mutated == 193
+
+    assert tuple(df_indels["fq"].values[:4]) == (1, 0, 0, 0)
+    assert tuple(df_insertion["fq"].values[:4]) == (7058, 0, 0, 0)
+    assert tuple(df_deletion["fq"].values[:4]) == (7046, 0, 0, 0)
+    assert tuple(df_substitution["fq"].values[:4]) == (6865, 188, 5, 0)
+    assert tuple(df_alleles["#Reads"].values[:4]) == (1098, 346, 19, 17)
