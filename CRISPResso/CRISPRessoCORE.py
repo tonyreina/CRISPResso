@@ -3,7 +3,7 @@
 
 """
 CRISPResso - Luca Pinello 2015
-Software pipeline for the analysis of CRISPR-Cas9 genome 
+Software pipeline for the analysis of CRISPR-Cas9 genome
 editing outcomes from deep sequencing data
 https://github.com/lucapinello/CRISPResso
 """
@@ -28,6 +28,11 @@ import datetime
 import logging
 
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib import font_manager as fm
+from matplotlib import colors as colors_mpl
+from matplotlib import gridspec
+
+from Bio import SeqIO, pairwise2
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,27 +48,46 @@ info = logging.info
 
 ####Support functions###
 
-_ROOT = os.path.abspath(os.path.dirname(__file__))
-
 
 def get_data(path: str) -> str:
-    return os.path.join(_ROOT, "data", path)
+    """Combine the data path with the absolute path
+
+    Args:
+        path(str): Relative path
+    Returns:
+        Global absolute path
+    """
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)), "data", path)
 
 
 def check_library(library_name: str):
+    """Checks if library can be loaded
+
+    Args:
+        Library name to check
+    """
     try:
         return __import__(library_name)
-    except Exception:
-        raise Exception(f"You need to install {library_name} to use CRISPResso!")
+    except Exception as exc:
+        raise Exception(
+            f"You need to install {library_name} to use CRISPResso!"
+        ) from exc
 
 
-def which(program: str):
-    import os
+def which(program: str) -> str:
+    """Checks if program is executable
+
+    Args:
+        program(str): Name of the program to check
+
+    Returns:
+        Name of the program or None if not found
+    """
 
     def is_exe(fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
-    fpath, fname = os.path.split(program)
+    fpath, _ = os.path.split(program)
     if fpath:
         if is_exe(program):
             return program
@@ -78,6 +102,12 @@ def which(program: str):
 
 
 def check_program(binary_name: str, download_url: str = None):
+    """Checks if program exists
+
+    Args:
+        binary_name(str): Name of the program to check
+        download_url(str): URL for download if it isn't installed
+    """
     if not which(binary_name):
         if download_url:
             error(f"You can download it from here: {download_url}")
@@ -91,14 +121,25 @@ def check_program(binary_name: str, download_url: str = None):
 
 
 def check_file(filename: str):
+    """Checks if file can be opened
+
+    Args:
+        filename(str): Filename to check
+    """
     try:
         with open(filename, "r", encoding="utf-8"):
             pass
-    except IOError:
-        raise Exception("I cannot open the file: " + filename)
+    except IOError as exc:
+        raise Exception(f"I cannot open the file: {filename}") from exc
 
 
 def force_symlink(src: str, dst: str) -> None:
+    """Symbolic link two directories
+
+    Args:
+        src(str): Source directory
+        dst(str): Destination directory
+    """
 
     if os.path.exists(dst) and os.path.samefile(src, dst):
         return
@@ -111,22 +152,56 @@ def force_symlink(src: str, dst: str) -> None:
             os.symlink(src, dst)
 
 
-nt_complement = dict(
-    {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N", "_": "_", "-": "-"}
-)
+def reverse_complement(sequence: str) -> str:
+    """Reverse complement of sequence
+
+    Calculate the reverse complement of the nucleotide sequence.
+
+    Args:
+        sequence(str): Input sequence of nucleotides
+
+    Returns:
+        Reverse complement string
+    """
+
+    nt_complement = dict(
+        {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N", "_": "_", "-": "-"}
+    )
+    return "".join([nt_complement[c] for c in sequence.upper()[-1::-1]])
 
 
-def reverse_complement(seq: str) -> str:
-    return "".join([nt_complement[c] for c in seq.upper()[-1::-1]])
+def find_wrong_nt(sequence: str) -> List[str]:
+    """Finds any incorrect base pair labels
 
+    Makes sure the nucleotide sequence is valid.
 
-def find_wrong_nt(sequence: str):
+    Args:
+        sequence(str): The input nucleotide sequence
+
+    Returns:
+        Any invalid nucleotide labels
+
+    """
     return list(set(sequence.upper()).difference(set(["A", "T", "C", "G", "N"])))
 
 
 def get_ids_reads_to_remove(
     fastq_filename: str, min_bp_quality: int = 20, min_single_bp_quality: int = 0
 ) -> List[str]:
+    """Get list of reads to remove
+
+    Gets a list of the reads that are below the basepair quality specified
+
+    Args:
+        fastq_filename(str): Filename of fastq file
+        min_bp_quality(int): Minimum average basepair quality score
+        min_single_bp_quality(int): Minimum single basepair quality score
+
+    Returns:
+        List of read labels to remove due to low quality scores
+
+    """
+
     ids_to_remove = set()
     if fastq_filename.endswith(".gz"):
         fastq_handle = gzip.open(fastq_filename, "rt")
@@ -152,14 +227,13 @@ def filter_pe_fastq_by_qual(
     min_bp_quality: int = 20,
     min_single_bp_quality: int = 0,
 ):
-    """
-    Filters paired end reads by quality score.
+    """Filters paired end reads by quality score.
 
     Args:
         fastq_r1(str): Fastq filename for read 1
         fastq_r2(str): Fastq filename for read 2
         output_filename_r1(str): Output filename for read 1
-        output_filename_r2(str): Output filename for read 1
+        output_filename_r2(str): Output filename for read 2
         min_bp_quality(int): Minimum average base quality
         min_single_bp_quality(int): Minimum single base quality
 
@@ -204,8 +278,8 @@ def filter_pe_fastq_by_qual(
         for record in SeqIO.parse(fastq_handle_r1, "fastq"):
             if not record.id in ids_to_remove:
                 fastq_filtered_outfile_r1.write(record.format("fastq"))
-    except Exception:
-        raise Exception("Error handling the fastq_filtered_outfile_r1")
+    except Exception as exc:
+        raise Exception("Error handling the fastq_filtered_outfile_r1") from exc
 
     try:
         fastq_filtered_outfile_r2 = gzip.open(output_filename_r2, "wt")
@@ -213,8 +287,8 @@ def filter_pe_fastq_by_qual(
         for record in SeqIO.parse(fastq_handle_r2, "fastq"):
             if not record.id in ids_to_remove:
                 fastq_filtered_outfile_r2.write(record.format("fastq"))
-    except Exception:
-        raise Exception("Error handling the fastq_filtered_outfile_r2")
+    except Exception as exc:
+        raise Exception("Error handling the fastq_filtered_outfile_r2") from exc
 
     return output_filename_r1, output_filename_r2
 
@@ -225,7 +299,15 @@ def filter_se_fastq_by_qual(
     min_bp_quality: int = 20,
     min_single_bp_quality: int = 0,
 ):
+    """Filters single end reads by quality score.
 
+    Args:
+        fastq_filename(str): Fastq filename for read
+        output_filename(str): Output filename for read
+        min_bp_quality(int): Minimum average base quality
+        min_single_bp_quality(int): Minimum single base quality
+
+    """
     if fastq_filename.endswith(".gz"):
         fastq_handle = gzip.open(fastq_filename, "rt")
     else:
@@ -248,8 +330,8 @@ def filter_se_fastq_by_qual(
                 >= min_single_bp_quality
             ):
                 fastq_filtered_outfile.write(record.format("fastq"))
-    except Exception:
-        raise Exception("Error handling the fastq_filtered_outfile")
+    except Exception as exc:
+        raise Exception("Error handling the fastq_filtered_outfile") from exc
 
     return output_filename
 
@@ -257,7 +339,7 @@ def filter_se_fastq_by_qual(
 def get_average_read_length_fastq(fastq_filename):
     cmd = (
         ("z" if fastq_filename.endswith(".gz") else "")
-        + ("cat < %s" % fastq_filename)
+        + (f"cat < {fastq_filename}")
         + r""" | awk 'BN {n=0;s=0;} NR%4 == 2 {s+=length($0);n++;} END { printf("%d\n",s/n)}' """
     )
     p = sb.Popen(cmd, shell=True, stdout=sb.PIPE)
@@ -267,7 +349,7 @@ def get_average_read_length_fastq(fastq_filename):
 def get_n_reads_fastq(fastq_filename):
     p = sb.Popen(
         ("z" if fastq_filename.endswith(".gz") else "")
-        + "cat < %s | wc -l" % fastq_filename,
+        + f"cat < {fastq_filename} | wc -l",
         shell=True,
         stdout=sb.PIPE,
     )
@@ -275,16 +357,12 @@ def get_n_reads_fastq(fastq_filename):
 
 
 matplotlib = check_library("matplotlib")
-from matplotlib import font_manager as fm
 
 font = {"size": 22}
 matplotlib.rc("font", **font)
 matplotlib.use("Agg")
 
 plt = check_library("pylab")
-from matplotlib import font_manager as fm
-from matplotlib import colors as colors_mpl
-import matplotlib.gridspec as gridspec
 
 pd = check_library("pandas")
 np = check_library("numpy")
@@ -298,8 +376,6 @@ sns = check_library("seaborn")
 sns.set_context("poster")
 sns.set(font_scale=2.2)
 sns.set_style("white")
-
-from Bio import SeqIO, pairwise2
 
 ###EXCEPTIONS############################
 class FlashException(Exception):
@@ -979,7 +1055,6 @@ def plot_alleles_table(
         for p in re_find_indels.finditer(row["Reference_Sequence"]):
             lines[idx_row].append((p.start(), p.end()))
 
-        # FIXME
         lines[idx_row].append(row["Reference_Sequence"])
         idx_row += 1
 
