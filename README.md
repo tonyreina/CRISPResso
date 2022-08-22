@@ -5,7 +5,7 @@ CRISPResso is a software pipeline for the analysis of targeted CRISPR-Cas9 seque
 ---
 **NOTE**
 
-[CRISPResso2](https://github.com/pinellolab/crispresso2) is the updated, improved version of this project. The purpose of this fork is to update the old code to work in Python 3+.
+[CRISPResso2](https://github.com/pinellolab/crispresso2) is the updated, improved version of this project. The purpose of this fork is to update the old code to work in Python 3+ (tested with Python 3.10.5).
 
 ---
 
@@ -679,10 +679,15 @@ dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
   - alsa-lib=1.2.6.1=h7f98852_0
+  - attrs=22.1.0=pyh71513ae_1
   - biopython=1.79=py310h5764c6d_2
+  - bowtie2=2.4.5=py310he297e0b_3
   - bzip2=1.0.8=h7f98852_4
+  - c-ares=1.18.1=h7f98852_0
   - ca-certificates=2022.6.15=ha878542_0
   - cairo=1.16.0=ha61ee94_1012
+  - coverage=6.4.4=py310h5764c6d_0
+  - curl=7.83.1=h2283fc2_0
   - emboss=6.6.0=h86d058a_5
   - expat=2.4.8=h27087fc_0
   - flash=1.2.11=h27826a3_0
@@ -698,7 +703,9 @@ dependencies:
   - giflib=5.2.1=h36c2ea0_2
   - graphite2=1.3.13=h58526e2_1001
   - harfbuzz=5.1.0=hf9f4e7c_0
+  - htslib=1.9=h4da6232_3
   - icu=70.1=h27087fc_0
+  - iniconfig=1.1.1=pyh9f0ad1d_0
   - jpeg=9e=h166bdaf_2
   - keyutils=1.6.1=h166bdaf_0
   - krb5=1.19.3=h08a2579_0
@@ -708,9 +715,12 @@ dependencies:
   - libblas=3.9.0=16_linux64_openblas
   - libcblas=3.9.0=16_linux64_openblas
   - libcups=2.3.3=h3e49a29_2
+  - libcurl=7.83.1=h2283fc2_0
   - libdeflate=1.13=h166bdaf_0
   - libedit=3.1.20191231=he28a2e2_2
+  - libev=4.33=h516909a_1
   - libffi=3.4.2=h7f98852_5
+  - libgcc=7.2.0=h69d50b8_2
   - libgcc-ng=12.1.0=h8d9b700_16
   - libgd=2.3.3=h18fbbfe_3
   - libgfortran-ng=12.1.0=h69a702a_16
@@ -719,10 +729,12 @@ dependencies:
   - libgomp=12.1.0=h8d9b700_16
   - libiconv=1.16=h516909a_0
   - liblapack=3.9.0=16_linux64_openblas
+  - libnghttp2=1.47.0=hff17c54_1
   - libnsl=2.0.0=h7f98852_0
   - libopenblas=0.3.21=pthreads_h78a6416_2
   - libpng=1.6.37=h753d276_4
   - libsqlite=3.39.2=h753d276_1
+  - libssh2=1.10.0=hf14f497_3
   - libstdcxx-ng=12.1.0=ha89aaad_16
   - libtiff=4.4.0=h0e0dad5_3
   - libuuid=2.32.1=h7f98852_1000
@@ -730,22 +742,33 @@ dependencies:
   - libwebp-base=1.2.4=h166bdaf_0
   - libxcb=1.13=h7f98852_1004
   - libzlib=1.2.12=h166bdaf_2
+  - mysql-connector-c=6.1.6=0
   - ncurses=6.3=h27087fc_1
   - numpy=1.23.2=py310h53a5b5f_0
   - openjdk=17.0.3=h1e1ecb3_1
   - openssl=3.0.5=h166bdaf_1
+  - packaging=21.3=pyhd8ed1ab_0
   - pcre=8.45=h9c3ff4c_0
+  - perl=5.32.1=2_h7f98852_perl5
   - pip=22.2.2=pyhd8ed1ab_0
   - pixman=0.40.0=h36c2ea0_0
+  - pluggy=1.0.0=py310hff52083_3
   - pthread-stubs=0.4=h36c2ea0_1001
+  - py=1.11.0=pyh6c4a22f_0
+  - pyparsing=3.0.9=pyhd8ed1ab_0
+  - pytest=7.1.2=py310hff52083_0
   - python=3.10.5=ha86cf86_0_cpython
   - python_abi=3.10=2_cp310
   - readline=8.1.2=h0f457ee_0
+  - samtools=1.6=h3f2fef4_8
   - setuptools=65.1.1=py310hff52083_0
   - sqlite=3.39.2=h4ff8645_1
+  - tbb=2020.2=h4bd325d_4
   - tk=8.6.12=h27826a3_0
+  - tomli=2.0.1=pyhd8ed1ab_0
   - trimmomatic=0.39=hdfd78af_2
   - tzdata=2022c=h191b570_0
+  - ucsc-fatotwobit=357=0
   - wheel=0.37.1=pyhd8ed1ab_0
   - xorg-fixesproto=5.0=h7f98852_1002
   - xorg-inputproto=2.3.2=h7f98852_1002
@@ -767,4 +790,16 @@ dependencies:
   - xz=5.2.6=h166bdaf_0
   - zlib=1.2.12=h166bdaf_2
   - zstd=1.5.2=h6239696_4
+  - pip:
+    - cycler==0.11.0
+    - fonttools==4.36.0
+    - kiwisolver==1.4.4
+    - matplotlib==3.5.3
+    - pandas==1.4.3
+    - pillow==9.2.0
+    - python-dateutil==2.8.2
+    - pytz==2022.2.1
+    - scipy==1.9.0
+    - seaborn==0.11.2
+    - six==1.16.0
 ```
