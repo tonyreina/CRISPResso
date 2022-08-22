@@ -8,6 +8,7 @@ from .CRISPRessoCORE import (
     get_average_read_length_fastq,
     get_ids_reads_to_remove,
     get_n_reads_fastq,
+    parse_args,
     reverse_complement,
     run_crispresso
 )

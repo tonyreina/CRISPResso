@@ -5,63 +5,27 @@
 
 # coverage run -m pytest -vvv crispresso_tests.py; coverage report -m
 
-
-import shutil
+import sys
+import os
 import numpy as np
 
 import pytest
 
 import CRISPResso as cr
 
-trimmomatic_dir = f"test_data/"
+env_directory = os.getenv("CONDA_PREFIX")
+trim_dir = f"{env_directory}/share/trimmomatic-0.39-2/adapters/"
 
+# Next line hijacks the command line parameters so that
+# we can mock our own during the test.
+sys.argv = [
+    "CRISPResso",
+    "-r1",
+    "test_data/test1_L001_R1_001.fastq.gz",
+    "--amplicon_seq",
+    "gtcgccccgacttctctccacctcctccac",
+]
 
-class args_class():
-    output_folder = "TEST_OUTPUT_FOLDER"
-    fastq_r1 = "test_data/test_L001_R1_001.fastq.gz"
-    fastq_r2 = "test_data/test_L001_R2_001.fastq.gz"
-    amplicon_seq = (
-        "gtcgcccctcaaatcttacagctgctcactc"
-        "ccctgcagggcaacgcccagggaccaagttag"
-        "ccccttaagcctaggcaaaagaatcccgccca"
-        "taatcgagaagcgactcgacatggaggcgatg"
-        "acgagatcacgcgaggaggaaaggagggaggg"
-        "cttcttccaggcccagggcggtccttacaaga"
-        "cgggaggcagcagagaactcccataaaggtatt"
-        "gcggcactcccctccccctgcccagaagggtgc"
-        "ggccttctctccacctcctccac"
-    )
-    guide_seq = "aatcgagaagcgactcgaca,taaggggctaacttggtccc"
-    name = "pytest"
-    cleavage_offset = -3
-    window_around_sgrna = 1
-    expected_hdr_amplicon_seq = ""
-    donor_seq = ""
-    coding_seq = ""
-    min_average_read_quality = 0
-    min_single_bp_quality = 0
-    min_identity_score = 60.0
-    split_paired_end = False
-    trim_sequences = False
-    trimmomatic_options_string = f"ILLUMINACLIP:{trimmomatic_dir}NexteraPE-PE.fa:0:90:10:0:true MINLEN:40"
-    min_paired_end_reads_overlap = 4
-    max_paired_end_reads_overlap = 100
-    hide_mutations_outside_window_NHEJ = False
-    exclude_bp_from_left = 15
-    exclude_bp_from_right = 15
-    hdr_perfect_alignment_threshold = 50.0
-    ignore_substitutions = False
-    ignore_deletions = False
-    ignore_insertions = False
-    needle_options_string = "-gapopen=10 -gapextend=0.5  -awidth3=5000"
-    dump = False
-    save_also_png = True
-    n_processes = 1
-    offset_around_cut_to_plot = 20
-    min_frequency_alleles_around_cut_to_plot = 0.2
-    max_rows_alleles_around_cut_to_plot = 50
-    debug = False
-    keep_intermediate = False
 
 def test_count_reads():
 
@@ -148,7 +112,7 @@ def test_check_file_found():
 
 def test_check_file_not_found():
 
-    filename = "123test_dhjata/test_L0016hy_R1_001.hy.fastq.gz.in"
+    filename = ".123test_dhjata/test_L0.016hy_R1_001.hy.fastq.gz.in"
     with pytest.raises(Exception) as exc:
         cr.check_file(filename)
 
@@ -160,61 +124,75 @@ def test_check_program():
     assert cr.check_program("date")
 
 
-# @pytest.mark.parametrize(
-#     "p,keep_intermediate",
-#     [(1, False), (2, True)],
-# )
-# def test_run_crispresso(p, keep_intermediate):
-#     """Run end-to-end command
-    
-#     Ground truth values are from the original CRIPResso Docker
-#     CRISPResso --output_folder TEST_OUTPUT_FOLDER  \
-#         -r1 test_data/test_L001_R1_001.fastq.gz \
-#          -r2 test_data/test_L001_R2_001.fastq.gz \
-#          --amplicon_seq gtcgcccctcaaatcttacagctgctcactcccctgcagggcaacgcccagggaccaagttagccccttaagcctaggcaaaagaatcccgcccataatcgagaagcgactcgacatggaggcgatgacgagatcacgcgaggaggaaaggagggagggcttcttccaggcccagggcggtccttacaagacgggaggcagcagagaactcccataaaggtattgcggcactcccctccccctgcccagaagggtgcggccttctctccacctcctccac \
-#         --guide_seq aatcgagaagcgactcgaca,taaggggctaacttggtccc
-#     """
+@pytest.mark.parametrize(
+    "p,keep_intermediate",
+    [(1, False), (2, True)],
+)
+def test_run_crispresso(p, keep_intermediate):
+    """Run end-to-end command
 
-#     args = args_class()
-#     args.fastq_r1 = "test_data/test_L001_R1_001.fastq.gz"
-#     args.fastq_r2 = "test_data/test_L001_R2_001.fastq.gz"
-#     args.n_processes = p
-#     args.keep_intermediate = keep_intermediate
-#     args.output_folder = f"PYTEST_RESULTS_FOLDER/pytest_p{p}"
-#     args.trim_sequences = False
+    Ground truth values are from the original CRIPResso Docker
+    CRISPResso --output_folder TEST_OUTPUT_FOLDER  \
+        -r1 test_data/test_L001_R1_001.fastq.gz \
+         -r2 test_data/test_L001_R2_001.fastq.gz \
+         --amplicon_seq gtcgcccctcaaatcttacagctgctcactcccctgcagggcaacgcccagggaccaagttagccccttaagcctaggcaaaagaatcccgcccataatcgagaagcgactcgacatggaggcgatgacgagatcacgcgaggaggaaaggagggagggcttcttccaggcccagggcggtccttacaagacgggaggcagcagagaactcccataaaggtattgcggcactcccctccccctgcccagaagggtgcggccttctctccacctcctccac \
+        --guide_seq aatcgagaagcgactcgaca,taaggggctaacttggtccc
+    """
 
-#     (
-#         n_total,
-#         n_reads_input,
-#         n_unmodified,
-#         n_mixed_hdr_nhej,
-#         n_modified,
-#         n_repaired,
-#         nhej_inserted,
-#         nhej_deleted,
-#         nhej_mutated,
-#         df_indels,
-#         df_insertion,
-#         df_deletion,
-#         df_substitution,
-#         df_alleles,
-#     ) = cr.run_crispresso(args)
+    args = cr.parse_args(sys.argv[1:])
+    args.fastq_r1 = "test_data/test_L001_R1_001.fastq.gz"
+    args.fastq_r2 = "test_data/test_L001_R2_001.fastq.gz"
+    args.amplicon_seq = (
+        "gtcgcccctcaaatcttacagctgctcactc"
+        "ccctgcagggcaacgcccagggaccaagttag"
+        "ccccttaagcctaggcaaaagaatcccgccca"
+        "taatcgagaagcgactcgacatggaggcgatg"
+        "acgagatcacgcgaggaggaaaggagggaggg"
+        "cttcttccaggcccagggcggtccttacaaga"
+        "cgggaggcagcagagaactcccataaaggtat"
+        "tgcggcactcccctccccctgcccagaagggt"
+        "gcggccttctctccacctcctccac"
+    )
+    args.guide_seq = "aatcgagaagcgactcgaca,taaggggctaacttggtccc"
+    args.n_processes = p
+    args.keep_intermediate = keep_intermediate
+    args.output_folder = f"PYTEST_RESULTS_FOLDER/pytest_p{p}"
+    args.trim_sequences = False
 
-#     assert n_total == 7058
-#     assert n_reads_input == 8906
-#     assert n_unmodified == 6853
-#     assert n_mixed_hdr_nhej == 0
-#     assert n_modified == 205
-#     assert n_repaired == 0
-#     assert nhej_inserted == 0
-#     assert nhej_deleted == 12
-#     assert nhej_mutated == 193
+    print(args)
 
-#     assert tuple(df_indels["fq"].values[:4]) == (1, 0, 0, 0)
-#     assert tuple(df_insertion["fq"].values[:4]) == (7058, 0, 0, 0)
-#     assert tuple(df_deletion["fq"].values[:4]) == (7046, 0, 0, 0)
-#     assert tuple(df_substitution["fq"].values[:4]) == (6865, 188, 5, 0)
-#     assert tuple(df_alleles["#Reads"].values[:4]) == (1098, 346, 19, 17)
+    (
+        n_total,
+        n_reads_input,
+        n_unmodified,
+        n_mixed_hdr_nhej,
+        n_modified,
+        n_repaired,
+        nhej_inserted,
+        nhej_deleted,
+        nhej_mutated,
+        df_indels,
+        df_insertion,
+        df_deletion,
+        df_substitution,
+        df_alleles,
+    ) = cr.run_crispresso(args)
+
+    assert n_total == 7058
+    assert n_reads_input == 8906
+    assert n_unmodified == 6853
+    assert n_mixed_hdr_nhej == 0
+    assert n_modified == 205
+    assert n_repaired == 0
+    assert nhej_inserted == 0
+    assert nhej_deleted == 12
+    assert nhej_mutated == 193
+
+    assert tuple(df_indels["fq"].values[:4]) == (1, 0, 0, 0)
+    assert tuple(df_insertion["fq"].values[:4]) == (7058, 0, 0, 0)
+    assert tuple(df_deletion["fq"].values[:4]) == (7046, 0, 0, 0)
+    assert tuple(df_substitution["fq"].values[:4]) == (6865, 188, 5, 0)
+    assert tuple(df_alleles["#Reads"].values[:4]) == (1098, 346, 19, 17)
 
 
 @pytest.mark.parametrize(
@@ -234,15 +212,25 @@ def test1_run_crispresso(p, keep_intermediate):
         --min_identity_score 30.0  \
         --window_around_sgrna 23 \
         --trim_sequences
-        
-        Default trimmomatic options (on commandline):
-        --trimmomatic_options_string "ILLUMINACLIP:{CRISPResso_DIRECTORY}/NexteraPE-PE.fa:0:90:10:0:true MINLEN:40"
+
+
+        --trimmomatic_options_string "ILLUMINACLIP:NexteraPE-PE.fa:0:90:10:0:true MINLEN:40"
 
     """
 
-    args = args_class()
+    args = cr.parse_args(sys.argv[1:])
     args.fastq_r1 = "test_data/test1_L001_R1_001.fastq.gz"
     args.fastq_r2 = "test_data/test1_L001_R2_001.fastq.gz"
+    args.amplicon_seq = (
+        "gtcgcccctcaaatcttacagctgctcactcccctgcagg"
+        "gcaacgcccagggaccaagttagccccttaagcctaggcaa"
+        "aagaatcccgcccataatcgagaagcgactcgacatggagg"
+        "cgatgacgagatcacgcgaggaggaaaggagggagggcttc"
+        "ttccaggcccagggcggtccttacaagacgggaggcagcag"
+        "agaactcccataaaggtattgcggcactcccctccccctgc"
+        "ccagaagggtgcggccttctctccacctcctccac"
+    )
+    args.guide_seq = "cgagaagcgactcgacatgg,aaggggctaacttggtccct"
     args.n_processes = p
     args.keep_intermediate = keep_intermediate
     args.output_folder = f"PYTEST_RESULTS_FOLDER/pytest1_p{p}"
@@ -267,21 +255,18 @@ def test1_run_crispresso(p, keep_intermediate):
         df_alleles,
     ) = cr.run_crispresso(args)
 
-    # assert n_total == 4039
-    # assert n_reads_input == 4941
-    # assert n_unmodified == 3794
-    # assert n_mixed_hdr_nhej == 0
-    # assert n_modified == 221
-    # assert n_repaired == 0
-    # assert nhej_inserted == 49
-    # assert nhej_deleted == 680
-    # assert nhej_mutated == 890
+    assert n_total == 4039
+    assert n_reads_input == 4941
+    assert n_unmodified == 2647
+    assert n_mixed_hdr_nhej == 0
+    assert n_modified == 1392
+    assert n_repaired == 0
+    assert nhej_inserted == 49
+    assert nhej_deleted == 680
+    assert nhej_mutated == 890
 
-    # assert tuple(df_indels["fq"].values[:4]) == (2, 4, 5, 5)
-    # assert tuple(df_insertion["fq"].values[:4]) == (3990, 6, 1, 0)
-    # assert tuple(df_deletion["fq"].values[:4]) == (3359, 43, 3, 0)
-    # assert tuple(df_substitution["fq"].values[:4]) == (3149, 693, 105, 23)
-    # assert tuple(df_alleles["#Reads"].values[:4]) == (184, 68, 44, 26)
-
-# ILLUMINACLIP:{get_data('NexteraPE-PE.fa')}"
-#             ":0:90:10:0:true MINLEN:40
+    assert tuple(df_indels["fq"].values[:4]) == (2, 4, 5, 5)
+    assert tuple(df_insertion["fq"].values[:4]) == (3990, 6, 1, 0)
+    assert tuple(df_deletion["fq"].values[:4]) == (3359, 43, 3, 0)
+    assert tuple(df_substitution["fq"].values[:4]) == (3149, 693, 105, 23)
+    assert tuple(df_alleles["#Reads"].values[:4]) == (184, 68, 44, 26)
