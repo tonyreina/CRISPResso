@@ -31,10 +31,20 @@ The CRISPResso suite accommodates single or pooled amplicon deep sequencing, WGS
 
 ## Installation and Requirements
 
-The best way to install the command line version of CRISPResso is to use a `conda` environment. You can install `conda` by downloading and installing it from [Anaconda](https://anaconda.org/) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html)]. Conda is useful because there is a rich collection of pre-built bioinformatics Python packages at [Bioconda](https://bioconda.github.io/).
+The best way to install the command line version of CRISPResso is to use a `conda` environment. You can install `conda` by downloading and installing it from [Anaconda](https://anaconda.org/) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html). Conda is useful because there is a rich collection of pre-built bioinformatics Python packages at [Bioconda](https://bioconda.github.io/).
 
 1. In the CRISPResso root folder type `conda env create -f environment.yml`
-2. Make sure that the Java Runtime Environment is installed. On Ubuntu try to run `java --help`. If that results in an error then install Java with:
+2. Make sure that the Java Runtime Environment is installed. On Ubuntu try to run 
+
+```bash 
+java --help
+
+openjdk 17.0.3-internal 2022-04-19
+OpenJDK Runtime Environment (build 17.0.3-internal+0-adhoc..src)
+OpenJDK 64-Bit Server VM (build 17.0.3-internal+0-adhoc..src, mixed mode, sharing)
+```
+
+If that results in an error that Java is not found, then install Java with:
 
 ```bash
 
@@ -46,7 +56,7 @@ apt-get update && apt-get install default-jre make gcc g++ zlib1g-dev zlib1g unz
 ```bash
 
 conda activate crispresso-env
-pip install CRISPResso  --no-use-wheel --verbose
+pip install CRISPResso --no-use-wheel --verbose
 ```
 
 The setup will try to install these software for you:
@@ -57,7 +67,13 @@ The setup will try to install these software for you:
 
 If the setup fails on your machine you have to install them manually and put these utilities/binary files in your path!
 
-To check that the installation worked, open a terminal window and execute `CRISPResso --help`, you should see the help page.
+To check that the installation worked, open a terminal window and execute 
+
+```
+CRISPResso --help
+```
+
+you should see the help page.
 
 The setup will automatically create a folder in your home folder called CRISPResso_dependencies (if this folder is deleted, CRISPResso will not work!)! If you want to put the folder in a different location, you need to set the environment variable: CRISPRESSO_DEPENDENCIES_FOLDER. For example to put the folder in /home/lpinello/other_stuff you can write in the terminal *BEFORE* the installation:
 
@@ -212,32 +228,6 @@ Specify the number of processes to use for the quantification.  This parameter i
         - insertion_histogram.txt: processed data used to generate the insertion histogram in figure 3 in the output report.
         - deletion_histogram.txt: processed data used to generate the deletion histogram in figure 3 in the output report.
         - substitution_histogram.txt: processed data used to generate the substitution histogram in figure 3 in the output report.
-
-
-
-## Explore the output of CRISPResso
-
-In order to help you to familiarize with the output of CRISPResso we provide several precomputed analyses, using the standard settings, for different simulated sequencing datasets with sequencing artifact modeled after the Illumina Miseq platform (using the ART simulation tool: http://www.niehs.nih.gov/research/resources/software/biostatistics/art/ ) and with known editing efficiency and mutagenesis profile:
-
-1. 1000 unmodified reads: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_unmodified_amplicon_MISEQ_ERROR_WINDOW_1bp.zip
-
-2. 1000 unmodified reads, 1000 reads with 1 substitution: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_1_substitution_MISEQ_ERROR_WINDOW_1bp.zip
-
-3. 1000 unmodified reads, 1000 reads with 2 substitutions: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_2_substitution_MISEQ_ERROR_WINDOW_1bp.zip
-
-4. 1000 unmodified reads, 1000 reads with 3 substitutions: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_3_substitution_MISEQ_ERROR_WINDOW_1bp.zip
-
-5. 1000 unmodified reads, 1000 reads with an insertion of 5 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_5_ins_MISEQ_ERROR_WINDOW_1bp.zip
-
-6. 1000 unmodified reads, 1000 reads with an insertion of 10 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_10_ins_MISEQ_ERROR_WINDOW_1bp.zip
-
-7. 1000 unmodified reads, 1000 reads with an insertion of 50 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_50_ins_MISEQ_ERROR_WINDOW_1bp.zip
-
-8. 1000 unmodified reads, 1000 reads with a deletion of 5 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_5_del_MISEQ_ERROR_WINDOW_1bp.zip
-
-9. 1000 unmodified reads, 1000 reads with a deletion of 10 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_10_del_MISEQ_ERROR_WINDOW_1bp.zip
-
-10. 1000 unmodified reads, 1000 reads with a deletion of 50 bp: http://crispresso.rocks/static/examples/CRISPResso_on_SIMULATION_amplicon_50_del_MISEQ_ERROR_WINDOW_1bp.zip
 
 ## Installation and usage of CRISPRessoPooled
 
