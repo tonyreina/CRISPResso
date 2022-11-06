@@ -2051,7 +2051,7 @@ def run_crispresso(args):
 
         df_needle_alignment = df_needle_alignment.apply(ignore_n_in_alignment, axis=1)
 
-    #####QUANTIFICATION START
+    # ####QUANTIFICATION START
     def compute_ref_positions(ref_seq):
         pos_idxs = []
         idx = 0
@@ -2070,6 +2070,646 @@ def run_crispresso(args):
     df_needle_alignment["ref_positions"] = df_needle_alignment["ref_seq"].apply(
         compute_ref_positions
     )
+
+    def plot1_indel_size(hlengths, hdensity, center_index, pdf, args):
+        """Plot figure 1
+
+        Args:
+            hlengths
+            hdensity
+            center_index
+
+        """
+        plt.figure(figsize=(8.3, 8))
+
+        plt.bar(0, hdensity[center_index], color="red", linewidth=0)
+        # plt.hold(True)
+        barlist = plt.bar(hlengths, hdensity, align="center", linewidth=0)
+        barlist[center_index].set_color("r")
+        plt.xlim([xmin, xmax])
+        plt.ylabel("Sequences (no.)")
+        plt.xlabel("Indel size (bp)")
+        plt.ylim([0, hdensity.max() * 1.2])
+        plt.title("Indel size distribution")
+        lgd = plt.legend(
+            ["No indel", "Indel"],
+            loc="center",
+            bbox_to_anchor=(0.5, -0.22),
+            ncol=1,
+            fancybox=True,
+            shadow=True,
+        )
+
+        lgd.legendHandles[0].set_height(3)
+        lgd.legendHandles[1].set_height(3)
+        plt.savefig(
+            _jp("1a.Indel_size_distribution_n_sequences.pdf"), bbox_inches="tight"
+        )
+        if args.save_also_png:
+            plt.savefig(
+                _jp("1a.Indel_size_distribution_n_sequences.png"), bbox_inches="tight"
+            )
+
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+
+        plt.figure(figsize=(8.3, 8))
+        plt.bar(
+            0,
+            hdensity[center_index] / (float(hdensity.sum())) * 100.0,
+            color="red",
+            linewidth=0,
+        )
+
+        barlist = plt.bar(
+            hlengths,
+            hdensity / (float(hdensity.sum())) * 100.0,
+            align="center",
+            linewidth=0,
+        )
+        barlist[center_index].set_color("r")
+        plt.xlim([xmin, xmax])
+        plt.title("Indel size distribution")
+        plt.ylabel("Sequences (%)")
+        plt.xlabel("Indel size (bp)")
+
+        lgd = plt.legend(
+            ["No indel", "Indel"],
+            loc="center",
+            bbox_to_anchor=(0.5, -0.22),
+            ncol=1,
+            fancybox=True,
+            shadow=True,
+        )
+        lgd.legendHandles[0].set_height(3)
+        lgd.legendHandles[1].set_height(3)
+
+        plt.savefig(
+            _jp("1b.Indel_size_distribution_percentage.pdf"), bbox_inches="tight"
+        )
+        if args.save_also_png:
+            plt.savefig(
+                _jp("1b.Indel_size_distribution_percentage.png"), bbox_inches="tight"
+            )
+
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+
+    def plot2(
+        n_unmodified,
+        n_mixed_hdr_nhej,
+        n_modified,
+        n_repaired,
+        cut_points,
+        sg_rna_intervals,
+        length_amplicon,
+        pdf,
+        args,
+    ):
+        """Create plot 2"""
+
+        # ###PIE CHARTS FOR HDR/NHEJ/MIXED/EVENTS###
+
+        if args.expected_hdr_amplicon_seq:
+
+            plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
+            ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
+            _, texts, autotexts = ax1.pie(
+                [n_unmodified, n_mixed_hdr_nhej, n_modified, n_repaired],
+                labels=[
+                    f"Unmodified\n({n_unmodified} reads)",
+                    f"Mixed HDR-NHEJ\n({n_mixed_hdr_nhej} reads)",
+                    f"NHEJ\n({n_modified} reads)",
+                    f"HDR\n({n_repaired} reads)",
+                ],
+                explode=(0, 0, 0, 0),
+                colors=[(1, 0, 0, 0.2), (0, 1, 1, 0.2), (0, 0, 1, 0.2), (0, 1, 0, 0.2)],
+                autopct="%1.1f%%",
+            )
+
+            if cut_points or args.donor_seq:
+                ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
+                ax2.plot(
+                    [0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence"
+                )
+
+                if args.donor_seq:
+                    ax2.plot(
+                        core_donor_seq_st_en,
+                        [0, 0],
+                        "-",
+                        lw=10,
+                        c=(0, 1, 0, 0.5),
+                        label="Donor Sequence",
+                    )
+
+                if cut_points:
+                    ax2.plot(
+                        cut_points + offset_plots,
+                        np.zeros(len(cut_points)),
+                        "vr",
+                        ms=24,
+                        label="Predicted Cas9 cleavage site/s",
+                    )
+
+                for idx, sg_rna_int in enumerate(sg_rna_intervals):
+                    if idx == 0:
+                        ax2.plot(
+                            [sg_rna_int[0], sg_rna_int[1]],
+                            [0, 0],
+                            lw=10,
+                            c=(0, 0, 0, 0.15),
+                            label="sgRNA",
+                        )
+                    else:
+                        ax2.plot(
+                            [sg_rna_int[0], sg_rna_int[1]],
+                            [0, 0],
+                            lw=10,
+                            c=(0, 0, 0, 0.15),
+                            label="_nolegend_",
+                        )
+
+                lgd = plt.legend(
+                    bbox_to_anchor=(0, 0, 1.0, 0),
+                    ncol=1,
+                    mode="expand",
+                    borderaxespad=0.0,
+                    numpoints=1,
+                )
+                plt.xlim(0, length_amplicon)
+                plt.axis("off")
+
+            proptease = fm.FontProperties()
+            proptease.set_size("xx-large")
+            plt.setp(autotexts, fontproperties=proptease)
+            plt.setp(texts, fontproperties=proptease)
+            plt.savefig(
+                _jp("2.Unmodified_NHEJ_HDR_pie_chart.pdf"),
+                pad_inches=1,
+                bbox_inches="tight",
+            )
+            if args.save_also_png:
+                plt.savefig(
+                    _jp("2.Unmodified_NHEJ_HDR_pie_chart.png"),
+                    pad_inches=1,
+                    bbox_inches="tight",
+                )
+
+        else:
+            plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
+            ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
+            _, texts, autotexts = ax1.pie(
+                [n_unmodified / n_total * 100, n_modified / n_total * 100],
+                labels=[
+                    f"Unmodified\n({n_unmodified} reads)",
+                    f"NHEJ\n({n_modified} reads)",
+                ],
+                explode=(0, 0),
+                colors=[(1, 0, 0, 0.2), (0, 0, 1, 0.2)],
+                autopct="%1.1f%%",
+            )
+
+            if cut_points:
+                ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
+                ax2.plot(
+                    [0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence"
+                )
+
+                for idx, sg_rna_int in enumerate(sg_rna_intervals):
+                    if idx == 0:
+                        ax2.plot(
+                            [sg_rna_int[0], sg_rna_int[1]],
+                            [0, 0],
+                            lw=10,
+                            c=(0, 0, 0, 0.15),
+                            label="sgRNA",
+                            solid_capstyle="butt",
+                        )
+                    else:
+                        ax2.plot(
+                            [sg_rna_int[0], sg_rna_int[1]],
+                            [0, 0],
+                            lw=10,
+                            c=(0, 0, 0, 0.15),
+                            label="_nolegend_",
+                            solid_capstyle="butt",
+                        )
+
+                ax2.plot(
+                    cut_points + offset_plots,
+                    np.zeros(len(cut_points)),
+                    "vr",
+                    ms=12,
+                    label="Predicted Cas9 cleavage site/s",
+                )
+                lgd = plt.legend(
+                    bbox_to_anchor=(0, 0, 1.0, 0),
+                    ncol=1,
+                    mode="expand",
+                    borderaxespad=0.0,
+                    numpoints=1,
+                    prop={"size": "large"},
+                )
+                plt.xlim(0, length_amplicon)
+                plt.axis("off")
+
+            proptease = fm.FontProperties()
+            proptease.set_size("xx-large")
+            plt.setp(autotexts, fontproperties=proptease)
+            plt.setp(texts, fontproperties=proptease)
+            plt.savefig(
+                _jp("2.Unmodified_NHEJ_pie_chart.pdf"),
+                pad_inches=1,
+                bbox_inches="tight",
+            )
+            if args.save_also_png:
+                plt.savefig(
+                    _jp("2.Unmodified_NHEJ_pie_chart.png"),
+                    pad_inches=1,
+                    bbox_inches="tight",
+                )
+
+        pdf.attach_note("Unmodified NEHJ pie chart")
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+
+    def plot3(df_needle_alignment, n_total, pdf, args):
+        """Plot 3"""
+
+        # #############################################
+        # (3) a graph of frequency of deletions and
+        # insertions of various sizes (deletions
+        # could be consider as negative numbers and insertions as positive);
+
+        def calculate_range(df, column_name):
+            df_not_zero = df.loc[df[column_name] > 0, column_name]
+            try:
+                r = max(15, int(np.round(np.percentile(df_not_zero, 99))))
+            except Exception:
+                r = 15
+            return r
+
+        range_mut = calculate_range(df_needle_alignment, "n_mutated")
+        range_ins = calculate_range(df_needle_alignment, "n_inserted")
+        range_del = calculate_range(df_needle_alignment, "n_deleted")
+
+        y_values_mut, x_bins_mut = plt.histogram(
+            df_needle_alignment["n_mutated"], bins=range(0, range_mut)
+        )
+        y_values_ins, x_bins_ins = plt.histogram(
+            df_needle_alignment["n_inserted"], bins=range(0, range_ins)
+        )
+        y_values_del, x_bins_del = plt.histogram(
+            df_needle_alignment["n_deleted"], bins=range(0, range_del)
+        )
+
+        fig = plt.figure(figsize=(26, 6.5))
+
+        ax = fig.add_subplot(1, 3, 1)
+        ax.bar(
+            x_bins_ins[:-1], y_values_ins, align="center", linewidth=0, color=(0, 0, 1)
+        )
+        barlist = ax.bar(
+            x_bins_ins[:-1], y_values_ins, align="center", linewidth=0, color=(0, 0, 1)
+        )
+        barlist[0].set_color("r")
+
+        plt.title("Insertions")
+        plt.xlabel("Size (bp)")
+        plt.ylabel("Sequences % (no.)")
+        lgd = plt.legend(
+            ["Non-insertion", "Insertion"][::-1],
+            bbox_to_anchor=(0.82, -0.22),
+            ncol=1,
+            fancybox=True,
+            shadow=True,
+        )
+        lgd.legendHandles[0].set_height(6)
+        lgd.legendHandles[1].set_height(6)
+        plt.xlim(xmin=-1)
+        y_label_values = np.round(np.linspace(0, min(n_total, max(ax.get_yticks())), 6))
+        plt.yticks(
+            y_label_values,
+            [f"{n_reads / n_total * 100}%% ({n_reads})" for n_reads in y_label_values],
+        )
+
+        ax = fig.add_subplot(1, 3, 2)
+        ax.bar(
+            -x_bins_del[:-1], y_values_del, align="center", linewidth=0, color=(0, 0, 1)
+        )
+        barlist = ax.bar(
+            -x_bins_del[:-1], y_values_del, align="center", linewidth=0, color=(0, 0, 1)
+        )
+        barlist[0].set_color("r")
+        plt.title("Deletions")
+        plt.xlabel("Size (bp)")
+        plt.ylabel("Sequences % (no.)")
+        lgd = plt.legend(
+            ["Non-deletion", "Deletion"][::-1],
+            bbox_to_anchor=(0.82, -0.22),
+            ncol=1,
+            fancybox=True,
+            shadow=True,
+        )
+        lgd.legendHandles[0].set_height(6)
+        lgd.legendHandles[1].set_height(6)
+        plt.xlim(xmax=1)
+        y_label_values = np.round(
+            np.linspace(0, min(n_total, max(ax.get_yticks())), 6)
+        )  # np.arange(0,y_max,y_max/6.0)
+        plt.yticks(
+            y_label_values,
+            [
+                "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
+                for n_reads in y_label_values
+            ],
+        )
+
+        ax = fig.add_subplot(1, 3, 3)
+        ax.bar(
+            x_bins_mut[:-1], y_values_mut, align="center", linewidth=0, color=(0, 0, 1)
+        )
+        barlist = ax.bar(
+            x_bins_mut[:-1], y_values_mut, align="center", linewidth=0, color=(0, 0, 1)
+        )
+        barlist[0].set_color("r")
+        plt.title("Substitutions")
+        plt.xlabel("Positions substituted (number)")
+        plt.ylabel("Sequences % (no.)")
+        lgd = plt.legend(
+            ["Non-substitution", "Substitution"][::-1],
+            bbox_to_anchor=(0.82, -0.22),
+            ncol=1,
+            fancybox=True,
+            shadow=True,
+        )
+        lgd.legendHandles[0].set_height(6)
+        lgd.legendHandles[1].set_height(6)
+        plt.xlim(xmin=-1)
+        y_label_values = np.round(np.linspace(0, min(n_total, max(ax.get_yticks())), 6))
+        plt.yticks(
+            y_label_values,
+            [
+                "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
+                for n_reads in y_label_values
+            ],
+        )
+
+        plt.tight_layout()
+
+        plt.savefig(
+            _jp("3.Insertion_Deletion_Substitutions_size_hist.pdf"), bbox_inches="tight"
+        )
+        if args.save_also_png:
+            plt.savefig(
+                _jp("3.Insertion_Deletion_Substitutions_size_hist.png"),
+                bbox_inches="tight",
+            )
+
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+
+        return (
+            y_values_mut,
+            x_bins_mut,
+            y_values_ins,
+            x_bins_ins,
+            y_values_del,
+            x_bins_del,
+        )
+
+    def plot4a(
+        effect_vector_any, sg_rna_intervals, cut_points, length_amplicon, pdf, args
+    ):
+        """Create plot 4a"""
+
+        # (4) another graph with the frequency that
+        # each nucleotide within the amplicon was
+        # modified in any way (perhaps would consider
+        # insertion as modification of the flanking nucleotides);
+
+        # Indels location Plots
+
+        plt.figure(figsize=(10, 10))
+
+        y_max = max(effect_vector_any) * 1.2
+
+        plt.plot(
+            effect_vector_any,
+            "r",
+            lw=3,
+            label="Combined Insertions/Deletions/Substitutions",
+        )
+        # plt.hold(True)
+
+        if cut_points:
+
+            for idx, cut_point in enumerate(cut_points):
+                if idx == 0:
+                    plt.plot(
+                        [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
+                        [0, y_max],
+                        "--k",
+                        lw=2,
+                        label="Predicted cleavage position",
+                    )
+                else:
+                    plt.plot(
+                        [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
+                        [0, y_max],
+                        "--k",
+                        lw=2,
+                        label="_nolegend_",
+                    )
+
+            for idx, sg_rna_int in enumerate(sg_rna_intervals):
+                if idx == 0:
+                    plt.plot(
+                        [sg_rna_int[0], sg_rna_int[1]],
+                        [0, 0],
+                        lw=10,
+                        c=(0, 0, 0, 0.15),
+                        label="sgRNA",
+                        solid_capstyle="butt",
+                    )
+                else:
+                    plt.plot(
+                        [sg_rna_int[0], sg_rna_int[1]],
+                        [0, 0],
+                        lw=10,
+                        c=(0, 0, 0, 0.15),
+                        label="_nolegend_",
+                        solid_capstyle="butt",
+                    )
+
+        lgd = plt.legend(
+            loc="center",
+            bbox_to_anchor=(0.5, -0.23),
+            ncol=1,
+            fancybox=True,
+            shadow=True,
+        )
+        if y_max > 0:
+            y_label_values = np.arange(0, y_max, y_max / 6.0)
+        plt.yticks(
+            y_label_values,
+            [
+                f"{n_reads / float(n_total) * 100}%% ({n_reads})"
+                for n_reads in y_label_values
+            ],
+        )
+        plt.xticks(
+            np.arange(
+                0,
+                length_amplicon,
+                max(3, (length_amplicon // 6) - (length_amplicon // 6) % 5),
+            )
+        )
+
+        plt.title("Mutation position distribution")
+        plt.xlabel("Reference amplicon position (bp)")
+        plt.ylabel("Sequences % (no.)")
+        plt.ylim(0, max(1, y_max))
+        plt.xlim(xmax=len(args.amplicon_seq) - 1)
+        plt.savefig(
+            _jp("4a.Combined_Insertion_Deletion_Substitution_Locations.pdf"),
+            bbox_extra_artists=(lgd,),
+            bbox_inches="tight",
+        )
+        if args.save_also_png:
+            plt.savefig(
+                _jp("4a.Combined_Insertion_Deletion_Substitution_Locations.png"),
+                bbox_extra_artists=(lgd,),
+                bbox_inches="tight",
+                pad_inches=1,
+            )
+
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+
+    def plot4b(
+        effect_vector_insertion,
+        effect_vector_deletion,
+        effect_vector_mutation,
+        length_amplicon,
+        n_total,
+        n_modified,
+        cut_points,
+        sg_rna_intervals,
+        pdf,
+        args,
+    ):
+        """Plot 4b"""
+
+        # NHEJ
+        plt.figure(figsize=(10, 10))
+        plt.plot(effect_vector_insertion, "r", lw=3, label="Insertions")
+
+        plt.plot(effect_vector_deletion, "m", lw=3, label="Deletions")
+        plt.plot(effect_vector_mutation, "g", lw=3, label="Substitutions")
+
+        y_max = (
+            max(
+                max(effect_vector_insertion),
+                max(effect_vector_deletion),
+                max(effect_vector_mutation),
+            )
+            * 1.2
+        )
+
+        if cut_points:
+
+            for idx, cut_point in enumerate(cut_points):
+                if idx == 0:
+                    plt.plot(
+                        [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
+                        [0, y_max],
+                        "--k",
+                        lw=2,
+                        label="Predicted cleavage position",
+                    )
+                else:
+                    plt.plot(
+                        [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
+                        [0, y_max],
+                        "--k",
+                        lw=2,
+                        label="_nolegend_",
+                    )
+
+            for idx, sg_rna_int in enumerate(sg_rna_intervals):
+                if idx == 0:
+                    plt.plot(
+                        [sg_rna_int[0], sg_rna_int[1]],
+                        [0, 0],
+                        lw=10,
+                        c=(0, 0, 0, 0.15),
+                        label="sgRNA",
+                        solid_capstyle="butt",
+                    )
+                else:
+                    plt.plot(
+                        [sg_rna_int[0], sg_rna_int[1]],
+                        [0, 0],
+                        lw=10,
+                        c=(0, 0, 0, 0.15),
+                        label="_nolegend_",
+                        solid_capstyle="butt",
+                    )
+
+        lgd = plt.legend(
+            loc="center",
+            bbox_to_anchor=(0.5, -0.28),
+            ncol=1,
+            fancybox=True,
+            shadow=True,
+        )
+        if y_max > 0:
+            y_label_values = np.arange(0, y_max, y_max / 6.0)
+        plt.yticks(
+            y_label_values,
+            [
+                "%.1f%% (%.1f%% , %d)"
+                % (
+                    n_reads / float(n_total) * 100,
+                    n_reads / float(n_modified) * 100,
+                    n_reads,
+                )
+                for n_reads in y_label_values
+            ],
+        )
+        plt.xticks(
+            np.arange(
+                0,
+                length_amplicon,
+                max(3, (length_amplicon // 6) - (length_amplicon // 6) % 5),
+            )
+        )
+
+        plt.xlabel("Reference amplicon position (bp)")
+        plt.ylabel("Sequences: % Total ( % NHEJ, no. )")
+        plt.ylim(0, max(1, y_max))
+        plt.xlim(xmax=len(args.amplicon_seq) - 1)
+
+        plt.title("Mutation position distribution of NHEJ")
+        plt.savefig(
+            _jp("4b.Insertion_Deletion_Substitution_Locations_NHEJ.pdf"),
+            bbox_extra_artists=(lgd,),
+            bbox_inches="tight",
+        )
+        if args.save_also_png:
+            plt.savefig(
+                _jp("4b.Insertion_Deletion_Substitution_Locations_NHEJ.png"),
+                bbox_extra_artists=(lgd,),
+                bbox_inches="tight",
+                pad_inches=1,
+            )
+
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+
+    # END PLOTS
 
     # INITIALIZATIONS
 
@@ -2332,579 +2972,49 @@ def run_crispresso(args):
     hlengths = hlengths[:-1]
     center_index = np.nonzero(hlengths == 0)[0][0]
 
-    fig = plt.figure(figsize=(8.3, 8))
-
-    plt.bar(0, hdensity[center_index], color="red", linewidth=0)
-    # plt.hold(True)
-    barlist = plt.bar(hlengths, hdensity, align="center", linewidth=0)
-    barlist[center_index].set_color("r")
-    plt.xlim([xmin, xmax])
-    plt.ylabel("Sequences (no.)")
-    plt.xlabel("Indel size (bp)")
-    plt.ylim([0, hdensity.max() * 1.2])
-    plt.title("Indel size distribution")
-    lgd = plt.legend(
-        ["No indel", "Indel"],
-        loc="center",
-        bbox_to_anchor=(0.5, -0.22),
-        ncol=1,
-        fancybox=True,
-        shadow=True,
-    )
-    # lgd=plt.legend(loc='center', bbox_to_anchor=(0.5, -0.28),ncol=1, fancybox=True, shadow=True)
-    lgd.legendHandles[0].set_height(3)
-    lgd.legendHandles[1].set_height(3)
-    plt.savefig(_jp("1a.Indel_size_distribution_n_sequences.pdf"), bbox_inches="tight")
-    if args.save_also_png:
-        plt.savefig(
-            _jp("1a.Indel_size_distribution_n_sequences.png"), bbox_inches="tight"
-        )
-
+    # Save concatenated report to PDF
     pdf = PdfPages(_jp(f"crispresso_report_for_{database_id}.pdf"))
 
-    pdf.savefig()  # saves the current figure into a pdf page
-    plt.close()
+    # Create plot 1
+    plot1_indel_size(hlengths, hdensity, center_index, pdf, args)
 
-    plt.figure(figsize=(8.3, 8))
-    plt.bar(
-        0,
-        hdensity[center_index] / (float(hdensity.sum())) * 100.0,
-        color="red",
-        linewidth=0,
-    )
-    # plt.hold(True)
-    barlist = plt.bar(
-        hlengths,
-        hdensity / (float(hdensity.sum())) * 100.0,
-        align="center",
-        linewidth=0,
-    )
-    barlist[center_index].set_color("r")
-    plt.xlim([xmin, xmax])
-    plt.title("Indel size distribution")
-    plt.ylabel("Sequences (%)")
-    plt.xlabel("Indel size (bp)")
-    # lgd=plt.legend(['No indel','Indel'])
-    lgd = plt.legend(
-        ["No indel", "Indel"],
-        loc="center",
-        bbox_to_anchor=(0.5, -0.22),
-        ncol=1,
-        fancybox=True,
-        shadow=True,
-    )
-    lgd.legendHandles[0].set_height(3)
-    lgd.legendHandles[1].set_height(3)
-
-    plt.savefig(_jp("1b.Indel_size_distribution_percentage.pdf"), bbox_inches="tight")
-    if args.save_also_png:
-        plt.savefig(
-            _jp("1b.Indel_size_distribution_percentage.png"), bbox_inches="tight"
-        )
-
-    pdf.savefig()  # saves the current figure into a pdf page
-    plt.close()
-
-    ####PIE CHARTS FOR HDR/NHEJ/MIXED/EVENTS###
-
-    if args.expected_hdr_amplicon_seq:
-
-        fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
-        ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
-        _, texts, autotexts = ax1.pie(
-            [n_unmodified, n_mixed_hdr_nhej, n_modified, n_repaired],
-            labels=[
-                f"Unmodified\n({n_unmodified} reads)",
-                f"Mixed HDR-NHEJ\n({n_mixed_hdr_nhej} reads)",
-                f"NHEJ\n({n_modified} reads)",
-                f"HDR\n({n_repaired} reads)",
-            ],
-            explode=(0, 0, 0, 0),
-            colors=[(1, 0, 0, 0.2), (0, 1, 1, 0.2), (0, 0, 1, 0.2), (0, 1, 0, 0.2)],
-            autopct="%1.1f%%",
-        )
-
-        if cut_points or args.donor_seq:
-            ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
-            ax2.plot([0, LEN_AMPLICON], [0, 0], "-k", lw=2, label="Amplicon sequence")
-
-            if args.donor_seq:
-                ax2.plot(
-                    core_donor_seq_st_en,
-                    [0, 0],
-                    "-",
-                    lw=10,
-                    c=(0, 1, 0, 0.5),
-                    label="Donor Sequence",
-                )
-
-            if cut_points:
-                ax2.plot(
-                    cut_points + offset_plots,
-                    np.zeros(len(cut_points)),
-                    "vr",
-                    ms=24,
-                    label="Predicted Cas9 cleavage site/s",
-                )
-
-            for idx, sg_rna_int in enumerate(sg_rna_intervals):
-                if idx == 0:
-                    ax2.plot(
-                        [sg_rna_int[0], sg_rna_int[1]],
-                        [0, 0],
-                        lw=10,
-                        c=(0, 0, 0, 0.15),
-                        label="sgRNA",
-                    )
-                else:
-                    ax2.plot(
-                        [sg_rna_int[0], sg_rna_int[1]],
-                        [0, 0],
-                        lw=10,
-                        c=(0, 0, 0, 0.15),
-                        label="_nolegend_",
-                    )
-
-            plt.legend(
-                bbox_to_anchor=(0, 0, 1.0, 0),
-                ncol=1,
-                mode="expand",
-                borderaxespad=0.0,
-                numpoints=1,
-            )
-            plt.xlim(0, LEN_AMPLICON)
-            plt.axis("off")
-
-        proptease = fm.FontProperties()
-        proptease.set_size("xx-large")
-        plt.setp(autotexts, fontproperties=proptease)
-        plt.setp(texts, fontproperties=proptease)
-        plt.savefig(
-            _jp("2.Unmodified_NHEJ_HDR_pie_chart.pdf"),
-            pad_inches=1,
-            bbox_inches="tight",
-        )
-        if args.save_also_png:
-            plt.savefig(
-                _jp("2.Unmodified_NHEJ_HDR_pie_chart.png"),
-                pad_inches=1,
-                bbox_inches="tight",
-            )
-
-    else:
-        fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
-        ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
-        _, texts, autotexts = ax1.pie(
-            [n_unmodified / n_total * 100, n_modified / n_total * 100],
-            labels=[
-                f"Unmodified\n({n_unmodified} reads)",
-                f"NHEJ\n({n_modified} reads)",
-            ],
-            explode=(0, 0),
-            colors=[(1, 0, 0, 0.2), (0, 0, 1, 0.2)],
-            autopct="%1.1f%%",
-        )
-
-        if cut_points:
-            ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
-            ax2.plot([0, LEN_AMPLICON], [0, 0], "-k", lw=2, label="Amplicon sequence")
-            # plt.hold(True)
-
-            for idx, sg_rna_int in enumerate(sg_rna_intervals):
-                if idx == 0:
-                    ax2.plot(
-                        [sg_rna_int[0], sg_rna_int[1]],
-                        [0, 0],
-                        lw=10,
-                        c=(0, 0, 0, 0.15),
-                        label="sgRNA",
-                        solid_capstyle="butt",
-                    )
-                else:
-                    ax2.plot(
-                        [sg_rna_int[0], sg_rna_int[1]],
-                        [0, 0],
-                        lw=10,
-                        c=(0, 0, 0, 0.15),
-                        label="_nolegend_",
-                        solid_capstyle="butt",
-                    )
-
-            ax2.plot(
-                cut_points + offset_plots,
-                np.zeros(len(cut_points)),
-                "vr",
-                ms=12,
-                label="Predicted Cas9 cleavage site/s",
-            )
-            plt.legend(
-                bbox_to_anchor=(0, 0, 1.0, 0),
-                ncol=1,
-                mode="expand",
-                borderaxespad=0.0,
-                numpoints=1,
-                prop={"size": "large"},
-            )
-            plt.xlim(0, LEN_AMPLICON)
-            plt.axis("off")
-
-        proptease = fm.FontProperties()
-        proptease.set_size("xx-large")
-        plt.setp(autotexts, fontproperties=proptease)
-        plt.setp(texts, fontproperties=proptease)
-        plt.savefig(
-            _jp("2.Unmodified_NHEJ_pie_chart.pdf"),
-            pad_inches=1,
-            bbox_inches="tight",
-        )
-        if args.save_also_png:
-            plt.savefig(
-                _jp("2.Unmodified_NHEJ_pie_chart.png"),
-                pad_inches=1,
-                bbox_inches="tight",
-            )
-
-    pdf.attach_note("Unmodified NEHJ pie chart")
-    pdf.savefig()  # saves the current figure into a pdf page
-    plt.close()
-
-    ##############################################
-    # (3) a graph of frequency of deletions and
-    # insertions of various sizes (deletions
-    # could be consider as negative numbers and insertions as positive);
-
-    def calculate_range(df, column_name):
-        df_not_zero = df.loc[df[column_name] > 0, column_name]
-        try:
-            r = max(15, int(np.round(np.percentile(df_not_zero, 99))))
-        except:
-            r = 15
-        return r
-
-    range_mut = calculate_range(df_needle_alignment, "n_mutated")
-    range_ins = calculate_range(df_needle_alignment, "n_inserted")
-    range_del = calculate_range(df_needle_alignment, "n_deleted")
-
-    y_values_mut, x_bins_mut = plt.histogram(
-        df_needle_alignment["n_mutated"], bins=range(0, range_mut)
-    )
-    y_values_ins, x_bins_ins = plt.histogram(
-        df_needle_alignment["n_inserted"], bins=range(0, range_ins)
-    )
-    y_values_del, x_bins_del = plt.histogram(
-        df_needle_alignment["n_deleted"], bins=range(0, range_del)
+    # Create plot 2
+    plot2(
+        n_unmodified,
+        n_mixed_hdr_nhej,
+        n_modified,
+        n_repaired,
+        cut_points,
+        sg_rna_intervals,
+        LEN_AMPLICON,
+        pdf,
+        args,
     )
 
-    fig = plt.figure(figsize=(26, 6.5))
+    # Create plot 3
+    (
+        y_values_mut,
+        x_bins_mut,
+        y_values_ins,
+        x_bins_ins,
+        y_values_del,
+        x_bins_del,
+    ) = plot3(df_needle_alignment, n_total, pdf, args)
 
-    ax = fig.add_subplot(1, 3, 1)
-    ax.bar(x_bins_ins[:-1], y_values_ins, align="center", linewidth=0, color=(0, 0, 1))
-    barlist = ax.bar(
-        x_bins_ins[:-1], y_values_ins, align="center", linewidth=0, color=(0, 0, 1)
+    plot4a(effect_vector_any, sg_rna_intervals, cut_points, LEN_AMPLICON, pdf, args)
+
+    plot4b(
+        effect_vector_insertion,
+        effect_vector_deletion,
+        effect_vector_mutation,
+        LEN_AMPLICON,
+        n_total,
+        n_modified,
+        cut_points,
+        sg_rna_intervals,
+        pdf,
+        args,
     )
-    barlist[0].set_color("r")
-
-    plt.title("Insertions")
-    plt.xlabel("Size (bp)")
-    plt.ylabel("Sequences % (no.)")
-    lgd = plt.legend(
-        ["Non-insertion", "Insertion"][::-1],
-        bbox_to_anchor=(0.82, -0.22),
-        ncol=1,
-        fancybox=True,
-        shadow=True,
-    )
-    lgd.legendHandles[0].set_height(6)
-    lgd.legendHandles[1].set_height(6)
-    plt.xlim(xmin=-1)
-    y_label_values = np.round(
-        np.linspace(0, min(n_total, max(ax.get_yticks())), 6)
-    )  # np.arange(0,y_max,y_max/6.0)
-    plt.yticks(
-        y_label_values,
-        [f"{n_reads / n_total * 100}%% ({n_reads})" for n_reads in y_label_values],
-    )
-
-    ax = fig.add_subplot(1, 3, 2)
-    ax.bar(-x_bins_del[:-1], y_values_del, align="center", linewidth=0, color=(0, 0, 1))
-    barlist = ax.bar(
-        -x_bins_del[:-1], y_values_del, align="center", linewidth=0, color=(0, 0, 1)
-    )
-    barlist[0].set_color("r")
-    plt.title("Deletions")
-    plt.xlabel("Size (bp)")
-    plt.ylabel("Sequences % (no.)")
-    lgd = plt.legend(
-        ["Non-deletion", "Deletion"][::-1],
-        bbox_to_anchor=(0.82, -0.22),
-        ncol=1,
-        fancybox=True,
-        shadow=True,
-    )
-    lgd.legendHandles[0].set_height(6)
-    lgd.legendHandles[1].set_height(6)
-    plt.xlim(xmax=1)
-    y_label_values = np.round(
-        np.linspace(0, min(n_total, max(ax.get_yticks())), 6)
-    )  # np.arange(0,y_max,y_max/6.0)
-    plt.yticks(
-        y_label_values,
-        [
-            "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
-            for n_reads in y_label_values
-        ],
-    )
-
-    ax = fig.add_subplot(1, 3, 3)
-    ax.bar(x_bins_mut[:-1], y_values_mut, align="center", linewidth=0, color=(0, 0, 1))
-    barlist = ax.bar(
-        x_bins_mut[:-1], y_values_mut, align="center", linewidth=0, color=(0, 0, 1)
-    )
-    barlist[0].set_color("r")
-    plt.title("Substitutions")
-    plt.xlabel("Positions substituted (number)")
-    plt.ylabel("Sequences % (no.)")
-    lgd = plt.legend(
-        ["Non-substitution", "Substitution"][::-1],
-        bbox_to_anchor=(0.82, -0.22),
-        ncol=1,
-        fancybox=True,
-        shadow=True,
-    )
-    lgd.legendHandles[0].set_height(6)
-    lgd.legendHandles[1].set_height(6)
-    plt.xlim(xmin=-1)
-    y_label_values = np.round(
-        np.linspace(0, min(n_total, max(ax.get_yticks())), 6)
-    )  # np.arange(0,y_max,y_max/6.0)
-    plt.yticks(
-        y_label_values,
-        [
-            "%.1f%% (%d)" % (n_reads / n_total * 100, n_reads)
-            for n_reads in y_label_values
-        ],
-    )
-
-    plt.tight_layout()
-
-    plt.savefig(
-        _jp("3.Insertion_Deletion_Substitutions_size_hist.pdf"), bbox_inches="tight"
-    )
-    if args.save_also_png:
-        plt.savefig(
-            _jp("3.Insertion_Deletion_Substitutions_size_hist.png"),
-            bbox_inches="tight",
-        )
-
-    pdf.savefig()  # saves the current figure into a pdf page
-    plt.close()
-
-    # (4) another graph with the frequency that
-    # each nucleotide within the amplicon was
-    # modified in any way (perhaps would consider
-    # insertion as modification of the flanking nucleotides);
-
-    # Indels location Plots
-
-    plt.figure(figsize=(10, 10))
-
-    y_max = max(effect_vector_any) * 1.2
-
-    plt.plot(
-        effect_vector_any,
-        "r",
-        lw=3,
-        label="Combined Insertions/Deletions/Substitutions",
-    )
-    # plt.hold(True)
-
-    if cut_points:
-
-        for idx, cut_point in enumerate(cut_points):
-            if idx == 0:
-                plt.plot(
-                    [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
-                    [0, y_max],
-                    "--k",
-                    lw=2,
-                    label="Predicted cleavage position",
-                )
-            else:
-                plt.plot(
-                    [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
-                    [0, y_max],
-                    "--k",
-                    lw=2,
-                    label="_nolegend_",
-                )
-
-        for idx, sg_rna_int in enumerate(sg_rna_intervals):
-            if idx == 0:
-                plt.plot(
-                    [sg_rna_int[0], sg_rna_int[1]],
-                    [0, 0],
-                    lw=10,
-                    c=(0, 0, 0, 0.15),
-                    label="sgRNA",
-                    solid_capstyle="butt",
-                )
-            else:
-                plt.plot(
-                    [sg_rna_int[0], sg_rna_int[1]],
-                    [0, 0],
-                    lw=10,
-                    c=(0, 0, 0, 0.15),
-                    label="_nolegend_",
-                    solid_capstyle="butt",
-                )
-
-    lgd = plt.legend(
-        loc="center",
-        bbox_to_anchor=(0.5, -0.23),
-        ncol=1,
-        fancybox=True,
-        shadow=True,
-    )
-    if y_max > 0:
-        y_label_values = np.arange(0, y_max, y_max / 6.0)
-    plt.yticks(
-        y_label_values,
-        [
-            f"{n_reads / float(n_total) * 100}%% ({n_reads})"
-            for n_reads in y_label_values
-        ],
-    )
-    plt.xticks(
-        np.arange(
-            0, LEN_AMPLICON, max(3, (LEN_AMPLICON / 6) - (LEN_AMPLICON / 6) % 5)
-        ).astype(int)
-    )
-
-    plt.title("Mutation position distribution")
-    plt.xlabel("Reference amplicon position (bp)")
-    plt.ylabel("Sequences % (no.)")
-    plt.ylim(0, max(1, y_max))
-    plt.xlim(xmax=len(args.amplicon_seq) - 1)
-    plt.savefig(
-        _jp("4a.Combined_Insertion_Deletion_Substitution_Locations.pdf"),
-        bbox_extra_artists=(lgd,),
-        bbox_inches="tight",
-    )
-    if args.save_also_png:
-        plt.savefig(
-            _jp("4a.Combined_Insertion_Deletion_Substitution_Locations.png"),
-            bbox_extra_artists=(lgd,),
-            bbox_inches="tight",
-            pad_inches=1,
-        )
-
-    pdf.savefig()  # saves the current figure into a pdf page
-    plt.close()
-
-    # NHEJ
-    plt.figure(figsize=(10, 10))
-    plt.plot(effect_vector_insertion, "r", lw=3, label="Insertions")
-    # plt.hold(True)
-    plt.plot(effect_vector_deletion, "m", lw=3, label="Deletions")
-    plt.plot(effect_vector_mutation, "g", lw=3, label="Substitutions")
-
-    y_max = (
-        max(
-            max(effect_vector_insertion),
-            max(effect_vector_deletion),
-            max(effect_vector_mutation),
-        )
-        * 1.2
-    )
-
-    if cut_points:
-
-        for idx, cut_point in enumerate(cut_points):
-            if idx == 0:
-                plt.plot(
-                    [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
-                    [0, y_max],
-                    "--k",
-                    lw=2,
-                    label="Predicted cleavage position",
-                )
-            else:
-                plt.plot(
-                    [cut_point + offset_plots[idx], cut_point + offset_plots[idx]],
-                    [0, y_max],
-                    "--k",
-                    lw=2,
-                    label="_nolegend_",
-                )
-
-        for idx, sg_rna_int in enumerate(sg_rna_intervals):
-            if idx == 0:
-                plt.plot(
-                    [sg_rna_int[0], sg_rna_int[1]],
-                    [0, 0],
-                    lw=10,
-                    c=(0, 0, 0, 0.15),
-                    label="sgRNA",
-                    solid_capstyle="butt",
-                )
-            else:
-                plt.plot(
-                    [sg_rna_int[0], sg_rna_int[1]],
-                    [0, 0],
-                    lw=10,
-                    c=(0, 0, 0, 0.15),
-                    label="_nolegend_",
-                    solid_capstyle="butt",
-                )
-
-    lgd = plt.legend(
-        loc="center",
-        bbox_to_anchor=(0.5, -0.28),
-        ncol=1,
-        fancybox=True,
-        shadow=True,
-    )
-    if y_max > 0:
-        y_label_values = np.arange(0, y_max, y_max / 6.0)
-    plt.yticks(
-        y_label_values,
-        [
-            "%.1f%% (%.1f%% , %d)"
-            % (
-                n_reads / float(n_total) * 100,
-                n_reads / float(n_modified) * 100,
-                n_reads,
-            )
-            for n_reads in y_label_values
-        ],
-    )
-    plt.xticks(
-        np.arange(
-            0, LEN_AMPLICON, max(3, (LEN_AMPLICON // 6) - (LEN_AMPLICON // 6) % 5)
-        ).astype(int)
-    )
-
-    plt.xlabel("Reference amplicon position (bp)")
-    plt.ylabel("Sequences: % Total ( % NHEJ, no. )")
-    plt.ylim(0, max(1, y_max))
-    plt.xlim(xmax=len(args.amplicon_seq) - 1)
-
-    plt.title("Mutation position distribution of NHEJ")
-    plt.savefig(
-        _jp("4b.Insertion_Deletion_Substitution_Locations_NHEJ.pdf"),
-        bbox_extra_artists=(lgd,),
-        bbox_inches="tight",
-    )
-    if args.save_also_png:
-        plt.savefig(
-            _jp("4b.Insertion_Deletion_Substitution_Locations_NHEJ.png"),
-            bbox_extra_artists=(lgd,),
-            bbox_inches="tight",
-            pad_inches=1,
-        )
-
-    pdf.savefig()  # saves the current figure into a pdf page
-    plt.close()
 
     if args.expected_hdr_amplicon_seq:
 
@@ -3218,6 +3328,14 @@ def run_crispresso(args):
 
     plt.tight_layout()
 
+    lgd = plt.legend(
+        loc="center",
+        bbox_to_anchor=(0.5, -0.28),
+        ncol=1,
+        fancybox=True,
+        shadow=True,
+    )
+
     plt.savefig(
         _jp("4e.Position_dependent_average_indel_size.pdf"),
         bbox_extra_artists=(lgd,),
@@ -3259,7 +3377,6 @@ def run_crispresso(args):
 
         ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
         ax2.plot([0, LEN_AMPLICON], [0, 0], "-k", lw=2, label="Amplicon sequence")
-        # plt.hold(True)
 
         for idx, exon_interval in enumerate(exon_intervals):
             if idx == 0:
@@ -3292,7 +3409,7 @@ def run_crispresso(args):
                 label="Predicted Cas9 cleavage site/s",
             )
 
-        plt.legend(
+        lgd = plt.legend(
             bbox_to_anchor=(0, 0, 1.0, 0),
             ncol=1,
             mode="expand",

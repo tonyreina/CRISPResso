@@ -1,0 +1,21 @@
+# conda env create -f environment.yml
+name: crispresso_env
+
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+
+dependencies:
+  - bowtie2
+  - emboss
+  - flash
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - python
+  - samtools
+  - seaborn
+  - trimmomatic
+  
