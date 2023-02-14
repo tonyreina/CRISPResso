@@ -354,9 +354,9 @@ def main():
             plt.savefig(_jp("1.Comparison_Efficiency.png"), bbox_inches="tight")
 
         # profile comparion
-        fig = plt.figure(figsize=(20, 10))
+        fig1 = plt.figure(figsize=(20, 10))
 
-        ax1 = fig.add_subplot(1, 2, 1)
+        # ax1 = fig.add_subplot(1, 2, 1)
         plt.title("Mutation position distribution")
         y_max = max(effect_vector_any_1.max(), effect_vector_any_2.max()) * 1.2
 
@@ -421,9 +421,9 @@ def main():
                     )
 
         lgd = plt.legend(
-            loc="center",
-            bbox_to_anchor=(0.5, -0.3),
-            ncol=1,
+            # loc="center",
+            # bbox_to_anchor=(0.5, -0.3),
+            # ncol=1,
             fancybox=True,
             shadow=False,
         )
@@ -438,7 +438,20 @@ def main():
         plt.ylim(0, max(1, y_max))
         plt.xlim(xmax=len_amplicon - 1)
 
-        ax2 = fig.add_subplot(1, 2, 2)
+        plt.savefig(
+            _jp("2a.Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf"),
+            bbox_extra_artists=(lgd,),
+            bbox_inches="tight",
+        )
+        if args.save_also_png:
+            plt.savefig(
+                _jp("2a.Comparison_Insertion_Deletion_Substitution_Locations.png"),
+                bbox_extra_artists=(lgd,),
+                bbox_inches="tight",
+            )
+
+        fig2 = plt.figure(figsize=(20, 10))
+        # ax2 = fig.add_subplot(1, 2, 2)
 
         effect_vector_any_diff = effect_vector_any_1 - effect_vector_any_2
 
@@ -486,8 +499,8 @@ def main():
                     )
 
         lgd2 = plt.legend(
-            loc="center",
-            bbox_to_anchor=(0.5, -0.2),
+            # loc="center",
+            # bbox_to_anchor=(0.5, -0.2),
             ncol=1,
             fancybox=True,
             shadow=False,
@@ -504,17 +517,18 @@ def main():
         plt.ylim(min(-1, y_min), max(1, y_max))
 
         plt.savefig(
-            _jp("2.Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf"),
+            _jp("2b.Comparison_Combined_Insertion_Deletion_Substitution_Locations.pdf"),
             bbox_extra_artists=(lgd,),
             bbox_inches="tight",
         )
         if args.save_also_png:
             plt.savefig(
-                _jp("2.Comparison_Insertion_Deletion_Substitution_Locations.png"),
+                _jp("2b.Comparison_Insertion_Deletion_Substitution_Locations.png"),
                 bbox_extra_artists=(lgd,),
                 bbox_inches="tight",
             )
 
+        
         info("All Done!")
         print(
             """     
