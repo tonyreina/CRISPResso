@@ -6,6 +6,9 @@ import argparse
 import re
 import pickle as cp
 
+from scipy.stats import mannwhitneyu, ttest_ind
+
+
 
 import logging
 
@@ -83,13 +86,14 @@ def parse_profile(profile_file):
 def load_cut_points_sgRNA_intervals(output_folder):
     cut_points_file = os.path.join(output_folder, "cut_points.pickle")
     sgRNA_intervals_file = os.path.join(output_folder, "sgRNA_intervals.pickle")
+
     if os.path.exists(cut_points_file):
-        cut_points = cp.load(open(cut_points_file))
+        cut_points = cp.load(open(cut_points_file, "rb"))
     else:
         cut_points = []
 
     if os.path.exists(sgRNA_intervals_file):
-        sgRNA_intervals = cp.load(open(sgRNA_intervals_file))
+        sgRNA_intervals = cp.load(open(sgRNA_intervals_file, "rb"))
     else:
         sgRNA_intervals = []
 
@@ -257,17 +261,22 @@ def main():
         profile_1 = parse_profile(profile_file_1)
         profile_2 = parse_profile(profile_file_2)
 
+        
         try:
             assert np.all(profile_1[:, 0] == profile_2[:, 0])
         except:
             pass
             # raise DifferentAmpliconLengthException('Different amplicon lenghts for the two amplicons.')
+
         len_amplicon = profile_1.shape[0]
         effect_vector_any_1 = profile_1[:, 1]
         effect_vector_any_2 = profile_2[:, 1]
+
         cut_points, sgRNA_intervals = load_cut_points_sgRNA_intervals(
             args.crispresso_output_folder_1
         )
+
+        
 
         # Quantification comparison barchart
         fig = plt.figure(figsize=(30, 15))
@@ -357,13 +366,22 @@ def main():
             lw=4,
             label="%s combined mutations" % args.sample_1_name,
         )
-        plt.hold(True)
+        
         plt.plot(
             effect_vector_any_2,
             color=(1, 0, 0, 0.3),
             lw=4,
             label="%s combined mutations" % args.sample_2_name,
         )
+
+        mannwhitney_results = mannwhitneyu(effect_vector_any_1, effect_vector_any_2)
+        print(f"Compare the distributions (position shift)= {mannwhitney_results}")
+
+        ttest_results = ttest_ind(effect_vector_any_1, effect_vector_any_2)
+        print(f"Compare the distributions (percentage shift) = {ttest_results}")
+
+
+        plt.text(5, y_max-10, f"Offset  p = {mannwhitney_results[1]:.3f}\nHeight p = {ttest_results[1]:.3f}")
 
         if cut_points:
             for idx, cut_point in enumerate(cut_points):
