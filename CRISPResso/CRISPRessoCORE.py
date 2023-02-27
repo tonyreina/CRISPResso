@@ -33,6 +33,8 @@ from matplotlib import font_manager as fm
 from matplotlib import colors as colors_mpl
 from matplotlib import gridspec
 
+import plotly.express as px
+
 from Bio import SeqIO, pairwise2
 
 logging.basicConfig(
@@ -2080,38 +2082,35 @@ def run_crispresso(args):
             center_index
 
         """
-        plt.figure(figsize=(8.3, 8))
 
-        plt.bar(0, hdensity[center_index], color="red", linewidth=0)
-        # plt.hold(True)
-        barlist = plt.bar(hlengths, hdensity, align="center", linewidth=0)
-        barlist[center_index].set_color("r")
-        plt.xlim([xmin, xmax])
-        plt.ylabel("Sequences (no.)")
-        plt.xlabel("Indel size (bp)")
-        plt.ylim([0, hdensity.max() * 1.2])
-        plt.title("Indel size distribution")
-        lgd = plt.legend(
-            ["No indel", "Indel"],
-            loc="center",
-            bbox_to_anchor=(0.5, -0.22),
-            ncol=1,
-            fancybox=True,
-            shadow=True,
+        # Create tag for edit type
+        # No indel is the center of the bar plot
+        # Rest are indels
+        indel = ["Indel"] * len(hlengths)
+        indel[center_index] = "No indel"
+
+        fig1_df = pd.DataFrame.from_dict(
+            {
+                "Indel size (bp)": hlengths,
+                "Sequences (no.)": hdensity,
+                "Edit Type": indel,
+            }
         )
 
-        lgd.legendHandles[0].set_height(3)
-        lgd.legendHandles[1].set_height(3)
-        plt.savefig(
-            _jp("1a.Indel_size_distribution_n_sequences.pdf"), bbox_inches="tight"
+        fig1a = px.bar(
+            data_frame=fig1_df,
+            x="Indel size (bp)",
+            y="Sequences (no.)",
+            color="Edit Type",
+            title="Indel size distribution",
         )
+
+        fig1a.update_layout(legend_title="")
+
+        fig1a.write_image(_jp("1a.Indel_size_distribution_n_sequences.pdf"))
+        fig1a.write_html(_jp("1a.Indel_size_distribution_n_sequences.html"))
         if args.save_also_png:
-            plt.savefig(
-                _jp("1a.Indel_size_distribution_n_sequences.png"), bbox_inches="tight"
-            )
-
-        pdf.savefig()  # saves the current figure into a pdf page
-        plt.close()
+            fig1a.write_image(_jp("1a.Indel_size_distribution_n_sequences.png"))
 
         plt.figure(figsize=(8.3, 8))
         plt.bar(
