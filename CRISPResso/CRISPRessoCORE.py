@@ -2086,6 +2086,8 @@ def run_crispresso(args):
         # Create tag for edit type
         # No indel is the center of the bar plot
         # Rest are indels
+
+        # Bar plot by counts
         indel = ["Indel"] * len(hlengths)
         indel[center_index] = "No indel"
 
@@ -2107,52 +2109,38 @@ def run_crispresso(args):
 
         fig1a.update_layout(legend_title="")
 
-        fig1a.write_image(_jp("1a.Indel_size_distribution_n_sequences.pdf"))
-        fig1a.write_html(_jp("1a.Indel_size_distribution_n_sequences.html"))
+        filename_fig1a = "1a.Indel_size_distribution_n_sequences"
+        fig1a.write_image(_jp(f"{filename_fig1a}.pdf"))
+        fig1a.write_html(_jp(f"{filename_fig1a}.html"))
         if args.save_also_png:
-            fig1a.write_image(_jp("1a.Indel_size_distribution_n_sequences.png"))
+            fig1a.write_image(_jp(f"{filename_fig1a}.png"))
 
-        plt.figure(figsize=(8.3, 8))
-        plt.bar(
-            0,
-            hdensity[center_index] / (float(hdensity.sum())) * 100.0,
-            color="red",
-            linewidth=0,
+        # Bar plot by percentages
+
+        fig1_df = pd.DataFrame.from_dict(
+            {
+                "Indel size (bp)": hlengths,
+                "Sequences (%)": 100. * hdensity / hdensity.sum(),
+                "Edit Type": indel,
+            }
         )
 
-        barlist = plt.bar(
-            hlengths,
-            hdensity / (float(hdensity.sum())) * 100.0,
-            align="center",
-            linewidth=0,
+        fig1b = px.bar(
+            data_frame=fig1_df,
+            x="Indel size (bp)",
+            y="Sequences (%)",
+            color="Edit Type",
+            title="Indel size distribution",
         )
-        barlist[center_index].set_color("r")
-        plt.xlim([xmin, xmax])
-        plt.title("Indel size distribution")
-        plt.ylabel("Sequences (%)")
-        plt.xlabel("Indel size (bp)")
 
-        lgd = plt.legend(
-            ["No indel", "Indel"],
-            loc="center",
-            bbox_to_anchor=(0.5, -0.22),
-            ncol=1,
-            fancybox=True,
-            shadow=True,
-        )
-        lgd.legendHandles[0].set_height(3)
-        lgd.legendHandles[1].set_height(3)
+        fig1b.update_layout(legend_title="")
 
-        plt.savefig(
-            _jp("1b.Indel_size_distribution_percentage.pdf"), bbox_inches="tight"
-        )
+        filename_fig1b = "1b.Indel_size_distribution_percentage"
+        fig1b.write_image(_jp(f"{filename_fig1b}.pdf"))
+        fig1b.write_html(_jp(f"{filename_fig1b}.html"))
         if args.save_also_png:
-            plt.savefig(
-                _jp("1b.Indel_size_distribution_percentage.png"), bbox_inches="tight"
-            )
+            fig1b.write_image(_jp(f"{filename_fig1b}.png"))
 
-        pdf.savefig()  # saves the current figure into a pdf page
-        plt.close()
 
     def plot2(
         n_unmodified,
