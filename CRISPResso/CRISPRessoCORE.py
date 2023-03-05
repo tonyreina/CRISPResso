@@ -2120,7 +2120,7 @@ def run_crispresso(args):
         fig1_df = pd.DataFrame.from_dict(
             {
                 "Indel size (bp)": hlengths,
-                "Sequences (%)": 100. * hdensity / hdensity.sum(),
+                "Sequences (%)": 100.0 * hdensity / hdensity.sum(),
                 "Edit Type": indel,
             }
         )
@@ -2141,7 +2141,6 @@ def run_crispresso(args):
         if args.save_also_png:
             fig1b.write_image(_jp(f"{filename_fig1b}.png"))
 
-
     def plot2(
         n_unmodified,
         n_mixed_hdr_nhej,
@@ -2159,167 +2158,202 @@ def run_crispresso(args):
 
         if args.expected_hdr_amplicon_seq:
 
-            plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
-            ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
-            _, texts, autotexts = ax1.pie(
-                [n_unmodified, n_mixed_hdr_nhej, n_modified, n_repaired],
-                labels=[
-                    f"Unmodified\n({n_unmodified} reads)",
-                    f"Mixed HDR-NHEJ\n({n_mixed_hdr_nhej} reads)",
-                    f"NHEJ\n({n_modified} reads)",
-                    f"HDR\n({n_repaired} reads)",
-                ],
-                explode=(0, 0, 0, 0),
-                colors=[(1, 0, 0, 0.2), (0, 1, 1, 0.2), (0, 0, 1, 0.2), (0, 1, 0, 0.2)],
-                autopct="%1.1f%%",
-            )
+            data = [
+                [f"Unmodified\n({n_unmodified} reads)", n_unmodified],
+                [f"Mixed HDR-NHEJ\n({n_mixed_hdr_nhej} reads)", n_mixed_hdr_nhej],
+                [f"NHEJ\n({n_modified} reads)", n_modified],
+                [f"HDR\n({n_repaired} reads)", n_repaired],
+            ]
 
-            if cut_points or args.donor_seq:
-                ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
-                ax2.plot(
-                    [0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence"
-                )
+            df2 = pd.DataFrame(data, columns=["Type", "Reads"])
 
-                if args.donor_seq:
-                    ax2.plot(
-                        core_donor_seq_st_en,
-                        [0, 0],
-                        "-",
-                        lw=10,
-                        c=(0, 1, 0, 0.5),
-                        label="Donor Sequence",
-                    )
+            fig2 = px.pie(df2, values="Reads", names="Type")
+            fig2.update_traces(textinfo="percent+label")
 
-                if cut_points:
-                    ax2.plot(
-                        cut_points + offset_plots,
-                        np.zeros(len(cut_points)),
-                        "vr",
-                        ms=24,
-                        label="Predicted Cas9 cleavage site/s",
-                    )
+            # plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
+            # ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
+            # _, texts, autotexts = ax1.pie(
+            #     [n_unmodified, n_mixed_hdr_nhej, n_modified, n_repaired],
+            #     labels=[
+            #         f"Unmodified\n({n_unmodified} reads)",
+            #         f"Mixed HDR-NHEJ\n({n_mixed_hdr_nhej} reads)",
+            #         f"NHEJ\n({n_modified} reads)",
+            #         f"HDR\n({n_repaired} reads)",
+            #     ],
+            #     explode=(0, 0, 0, 0),
+            #     colors=[(1, 0, 0, 0.2), (0, 1, 1, 0.2), (0, 0, 1, 0.2), (0, 1, 0, 0.2)],
+            #     autopct="%1.1f%%",
+            # )
 
-                for idx, sg_rna_int in enumerate(sg_rna_intervals):
-                    if idx == 0:
-                        ax2.plot(
-                            [sg_rna_int[0], sg_rna_int[1]],
-                            [0, 0],
-                            lw=10,
-                            c=(0, 0, 0, 0.15),
-                            label="sgRNA",
-                        )
-                    else:
-                        ax2.plot(
-                            [sg_rna_int[0], sg_rna_int[1]],
-                            [0, 0],
-                            lw=10,
-                            c=(0, 0, 0, 0.15),
-                            label="_nolegend_",
-                        )
+            # if cut_points or args.donor_seq:
+            #     ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
+            #     ax2.plot(
+            #         [0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence"
+            #     )
 
-                lgd = plt.legend(
-                    bbox_to_anchor=(0, 0, 1.0, 0),
-                    ncol=1,
-                    mode="expand",
-                    borderaxespad=0.0,
-                    numpoints=1,
-                )
-                plt.xlim(0, length_amplicon)
-                plt.axis("off")
+            #     if args.donor_seq:
+            #         ax2.plot(
+            #             core_donor_seq_st_en,
+            #             [0, 0],
+            #             "-",
+            #             lw=10,
+            #             c=(0, 1, 0, 0.5),
+            #             label="Donor Sequence",
+            #         )
 
-            proptease = fm.FontProperties()
-            proptease.set_size("xx-large")
-            plt.setp(autotexts, fontproperties=proptease)
-            plt.setp(texts, fontproperties=proptease)
-            plt.savefig(
-                _jp("2.Unmodified_NHEJ_HDR_pie_chart.pdf"),
-                pad_inches=1,
-                bbox_inches="tight",
-            )
+            #     if cut_points:
+            #         ax2.plot(
+            #             cut_points + offset_plots,
+            #             np.zeros(len(cut_points)),
+            #             "vr",
+            #             ms=24,
+            #             label="Predicted Cas9 cleavage site/s",
+            #         )
+
+            #     for idx, sg_rna_int in enumerate(sg_rna_intervals):
+            #         if idx == 0:
+            #             ax2.plot(
+            #                 [sg_rna_int[0], sg_rna_int[1]],
+            #                 [0, 0],
+            #                 lw=10,
+            #                 c=(0, 0, 0, 0.15),
+            #                 label="sgRNA",
+            #             )
+            #         else:
+            #             ax2.plot(
+            #                 [sg_rna_int[0], sg_rna_int[1]],
+            #                 [0, 0],
+            #                 lw=10,
+            #                 c=(0, 0, 0, 0.15),
+            #                 label="_nolegend_",
+            #             )
+
+            #     lgd = plt.legend(
+            #         bbox_to_anchor=(0, 0, 1.0, 0),
+            #         ncol=1,
+            #         mode="expand",
+            #         borderaxespad=0.0,
+            #         numpoints=1,
+            #     )
+            #     plt.xlim(0, length_amplicon)
+            #     plt.axis("off")
+
+            # proptease = fm.FontProperties()
+            # proptease.set_size("xx-large")
+            # plt.setp(autotexts, fontproperties=proptease)
+            # plt.setp(texts, fontproperties=proptease)
+            # plt.savefig(
+            #     _jp("2.Unmodified_NHEJ_HDR_pie_chart.pdf"),
+            #     pad_inches=1,
+            #     bbox_inches="tight",
+            # )
+            # if args.save_also_png:
+            #     plt.savefig(
+            #         _jp("2.Unmodified_NHEJ_HDR_pie_chart.png"),
+            #         pad_inches=1,
+            #         bbox_inches="tight",
+            #     )
+
+            filename_fig2 = "2.Unmodified_NHEJ_HDR_pie_chart.png"
+            fig2.write_image(_jp(f"{filename_fig2}.pdf"))
+            fig2.write_html(_jp(f"{filename_fig2}.html"))
             if args.save_also_png:
-                plt.savefig(
-                    _jp("2.Unmodified_NHEJ_HDR_pie_chart.png"),
-                    pad_inches=1,
-                    bbox_inches="tight",
-                )
+                fig2.write_image(_jp(f"{filename_fig2}.png"))
 
         else:
-            plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
-            ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
-            _, texts, autotexts = ax1.pie(
-                [n_unmodified / n_total * 100, n_modified / n_total * 100],
-                labels=[
-                    f"Unmodified\n({n_unmodified} reads)",
-                    f"NHEJ\n({n_modified} reads)",
-                ],
-                explode=(0, 0),
-                colors=[(1, 0, 0, 0.2), (0, 0, 1, 0.2)],
-                autopct="%1.1f%%",
-            )
 
-            if cut_points:
-                ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
-                ax2.plot(
-                    [0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence"
-                )
+            data = [
+                [f"Unmodified\n({n_unmodified} reads)", n_unmodified],
+                [f"NHEJ\n({n_modified} reads)", n_modified],
+            ]
 
-                for idx, sg_rna_int in enumerate(sg_rna_intervals):
-                    if idx == 0:
-                        ax2.plot(
-                            [sg_rna_int[0], sg_rna_int[1]],
-                            [0, 0],
-                            lw=10,
-                            c=(0, 0, 0, 0.15),
-                            label="sgRNA",
-                            solid_capstyle="butt",
-                        )
-                    else:
-                        ax2.plot(
-                            [sg_rna_int[0], sg_rna_int[1]],
-                            [0, 0],
-                            lw=10,
-                            c=(0, 0, 0, 0.15),
-                            label="_nolegend_",
-                            solid_capstyle="butt",
-                        )
+            df2 = pd.DataFrame(data, columns=["Type", "Reads"])
 
-                ax2.plot(
-                    cut_points + offset_plots,
-                    np.zeros(len(cut_points)),
-                    "vr",
-                    ms=12,
-                    label="Predicted Cas9 cleavage site/s",
-                )
-                lgd = plt.legend(
-                    bbox_to_anchor=(0, 0, 1.0, 0),
-                    ncol=1,
-                    mode="expand",
-                    borderaxespad=0.0,
-                    numpoints=1,
-                    prop={"size": "large"},
-                )
-                plt.xlim(0, length_amplicon)
-                plt.axis("off")
+            fig2 = px.pie(df2, values="Reads", names="Type")
+            fig2.update_traces(textinfo="percent+label")
 
-            proptease = fm.FontProperties()
-            proptease.set_size("xx-large")
-            plt.setp(autotexts, fontproperties=proptease)
-            plt.setp(texts, fontproperties=proptease)
-            plt.savefig(
-                _jp("2.Unmodified_NHEJ_pie_chart.pdf"),
-                pad_inches=1,
-                bbox_inches="tight",
-            )
-            if args.save_also_png:
-                plt.savefig(
-                    _jp("2.Unmodified_NHEJ_pie_chart.png"),
-                    pad_inches=1,
-                    bbox_inches="tight",
-                )
+            # plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
+            # ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
+            # _, texts, autotexts = ax1.pie(
+            #     [n_unmodified / n_total * 100, n_modified / n_total * 100],
+            #     labels=[
+            #         f"Unmodified\n({n_unmodified} reads)",
+            #         f"NHEJ\n({n_modified} reads)",
+            #     ],
+            #     explode=(0, 0),
+            #     colors=[(1, 0, 0, 0.2), (0, 0, 1, 0.2)],
+            #     autopct="%1.1f%%",
+            # )
 
-        pdf.attach_note("Unmodified NEHJ pie chart")
-        pdf.savefig()  # saves the current figure into a pdf page
-        plt.close()
+            # if cut_points:
+            #     ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
+            #     ax2.plot(
+            #         [0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence"
+            #     )
+
+            #     for idx, sg_rna_int in enumerate(sg_rna_intervals):
+            #         if idx == 0:
+            #             ax2.plot(
+            #                 [sg_rna_int[0], sg_rna_int[1]],
+            #                 [0, 0],
+            #                 lw=10,
+            #                 c=(0, 0, 0, 0.15),
+            #                 label="sgRNA",
+            #                 solid_capstyle="butt",
+            #             )
+            #         else:
+            #             ax2.plot(
+            #                 [sg_rna_int[0], sg_rna_int[1]],
+            #                 [0, 0],
+            #                 lw=10,
+            #                 c=(0, 0, 0, 0.15),
+            #                 label="_nolegend_",
+            #                 solid_capstyle="butt",
+            #             )
+
+            #     ax2.plot(
+            #         cut_points + offset_plots,
+            #         np.zeros(len(cut_points)),
+            #         "vr",
+            #         ms=12,
+            #         label="Predicted Cas9 cleavage site/s",
+            #     )
+            #     lgd = plt.legend(
+            #         bbox_to_anchor=(0, 0, 1.0, 0),
+            #         ncol=1,
+            #         mode="expand",
+            #         borderaxespad=0.0,
+            #         numpoints=1,
+            #         prop={"size": "large"},
+            #     )
+            #     plt.xlim(0, length_amplicon)
+            #     plt.axis("off")
+
+            # proptease = fm.FontProperties()
+            # proptease.set_size("xx-large")
+            # plt.setp(autotexts, fontproperties=proptease)
+            # plt.setp(texts, fontproperties=proptease)
+            # plt.savefig(
+            #     _jp("2.Unmodified_NHEJ_pie_chart.pdf"),
+            #     pad_inches=1,
+            #     bbox_inches="tight",
+            # )
+            # if args.save_also_png:
+            #     plt.savefig(
+            #         _jp("2.Unmodified_NHEJ_pie_chart.png"),
+            #         pad_inches=1,
+            #         bbox_inches="tight",
+            #     )
+
+        # pdf.attach_note("Unmodified NEHJ pie chart")
+        # pdf.savefig()  # saves the current figure into a pdf page
+        # plt.close()
+
+        filename_fig2 = "2.Unmodified_NHEJ_HDR_pie_chart.png"
+        fig2.write_image(_jp(f"{filename_fig2}.pdf"))
+        fig2.write_html(_jp(f"{filename_fig2}.html"))
+        if args.save_also_png:
+            fig2.write_image(_jp(f"{filename_fig2}.png"))
 
     def plot3(df_needle_alignment, n_total, pdf, args):
         """Plot 3"""
