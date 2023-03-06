@@ -34,6 +34,8 @@ from matplotlib import colors as colors_mpl
 from matplotlib import gridspec
 
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objs as go
 
 from Bio import SeqIO, pairwise2
 
@@ -2262,15 +2264,39 @@ def run_crispresso(args):
 
         else:
 
-            data = [
-                [f"Unmodified\n({n_unmodified} reads)", n_unmodified],
-                [f"NHEJ\n({n_modified} reads)", n_modified],
+            labels = [
+                f"Unmodified\n({n_unmodified} reads)",
+                f"NHEJ\n({n_modified} reads)",
             ]
+            values = [n_unmodified, n_modified]
 
-            df2 = pd.DataFrame(data, columns=["Type", "Reads"])
+            fig2 = make_subplots(
+                rows=2,
+                cols=1,
+                row_heights=[0.75, 0.25],
+                specs=[[{"type": "domain"}], [{"type": "scatter"}]],
+            )
 
-            fig2 = px.pie(df2, values="Reads", names="Type")
-            fig2.update_traces(textinfo="percent+label")
+            fig2.add_trace(
+                go.Pie(labels=labels, values=values, textinfo="percent+label"),
+                row=1,
+                col=1,
+            )
+
+            fig2.add_trace(
+                go.Scatter(
+                    x=[0, length_amplicon],
+                    y=[0, 0],
+                    name="Amplicon sequence",
+                    showlegend=False,
+                ),
+                row=2,
+                col=1,
+            )
+
+            # ax2.plot(
+            # #         [0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence"
+            # #     )
 
             # plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
             # ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
