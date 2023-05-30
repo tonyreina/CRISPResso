@@ -34,6 +34,8 @@ from matplotlib import colors as colors_mpl
 from matplotlib import gridspec
 
 import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objs as go
 
 from Bio import SeqIO, pairwise2
 
