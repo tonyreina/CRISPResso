@@ -914,7 +914,7 @@ def main():
 
             df_template["n_reads"] = n_reads_aligned_amplicons
             df_template["n_reads_aligned_%"] = (
-                df_template["n_reads"] / float(N_READS_ALIGNED) * 100.
+                df_template["n_reads"] / float(N_READS_ALIGNED) * 100.0
             )
             df_template.fillna("NA").to_csv(
                 _jp("REPORT_READS_ALIGNED_TO_AMPLICONS.txt"), sep="\t"
@@ -1160,7 +1160,7 @@ def main():
             df_template["Amplicon_Specific_fastq.gz_filename"] = fastq_region_filenames
             df_template["n_reads"] = n_reads_aligned_genome
             df_template["n_reads_aligned_%"] = (
-                df_template["n_reads"] / float(N_READS_ALIGNED) * 100.
+                df_template["n_reads"] / float(N_READS_ALIGNED) * 100.0
             )
 
             if args.gene_annotations:
@@ -1196,7 +1196,7 @@ def main():
             df_regions.bpend = df_regions.bpend.astype(int)
 
             df_regions["n_reads_aligned_%"] = (
-                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100.
+                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100.0
             )
 
             df_regions["Reference_sequence"] = df_regions.apply(
@@ -1258,7 +1258,7 @@ def main():
             )
 
             df_regions["n_reads_aligned_%"] = (
-                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100.
+                df_regions["n_reads"] / float(N_READS_ALIGNED) * 100.0
             )
 
             if args.gene_annotations:
@@ -1382,10 +1382,10 @@ def main():
                 quantification_summary.append(
                     [
                         idx,
-                        N_UNMODIFIED / N_TOTAL * 100.,
-                        N_MODIFIED / N_TOTAL * 100.,
-                        N_REPAIRED / N_TOTAL * 100.,
-                        N_MIXED_HDR_NHEJ / N_TOTAL * 100.,
+                        N_UNMODIFIED / N_TOTAL * 100.0,
+                        N_MODIFIED / N_TOTAL * 100.0,
+                        N_REPAIRED / N_TOTAL * 100.0,
+                        N_MIXED_HDR_NHEJ / N_TOTAL * 100.0,
                         N_TOTAL,
                         row.n_reads,
                     ]

@@ -618,13 +618,13 @@ def main():
                 fig.add_scatter(
                     x=[sgRNA_int[0], sgRNA_int[1]],
                     y=[0.5, 0.5],
-                    mode = "lines",
+                    mode="lines",
                     marker=dict(
                         color="grey",
                         size=10,
                         opacity=0.5,
                     ),
-                    name="sgRNA guide"
+                    name="sgRNA guide",
                 )
             else:
                 fig.add_scatter(
@@ -637,7 +637,7 @@ def main():
                         opacity=0.5,
                     ),
                     name="sgRNA guide",
-                    showlegend=False
+                    showlegend=False,
                 )
 
         fig.write_image(_jp("compare_plots.png"))
