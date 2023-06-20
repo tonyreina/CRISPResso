@@ -39,7 +39,20 @@ import plotly.graph_objs as go
 
 from Bio import SeqIO, pairwise2
 
-from .plotting import plot1_indel_size
+from .plotting import (
+    plot1_indel_size,
+    plot2,
+    plot3,
+    plot4a,
+    plot4b,
+    plot4c,
+    plot4d,
+    plot4e,
+    plot5,
+    plot6,
+    plot7,
+    plot8,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -53,42 +66,8 @@ warning = logging.warning
 debug = logging.debug
 info = logging.info
 
-# Create plot 2
-def plot2():
-    pass
-
-def plot3():
-    pass
-
-def plot4a():
-    pass
-
-def plot4b():
-    pass
-
-def plot4c():
-    pass
-
-def plot4d():
-    pass
-
-def plot4e():
-    pass
-
-def plot5():
-    pass
-
-def plot6():
-    pass
-
-def plot7():
-    pass
-
-def plot8():
-    pass
-
-
 # ###Support functions###
+
 
 def calculate_range(df, column_name):
     df_not_zero = df.loc[df[column_name] > 0, column_name]
@@ -97,6 +76,7 @@ def calculate_range(df, column_name):
     except Exception:
         r = 15
     return r
+
 
 def get_data(path: str) -> str:
     """Combine the data path with the absolute path
@@ -1240,11 +1220,16 @@ def plot_alleles_table(
     )
 
     plt.savefig(
-        os.path.join(output_directory, f"9.Alleles_around_cut_site_for_{sg_rna_name}.pdf"), bbox_inches="tight"
+        os.path.join(
+            output_directory, f"9.Alleles_around_cut_site_for_{sg_rna_name}.pdf"
+        ),
+        bbox_inches="tight",
     )
     if args.save_also_png:
         plt.savefig(
-            os.path.join(output_directory, f"9.Alleles_around_cut_site_for_{sg_rna_name}.png"),
+            os.path.join(
+                output_directory, f"9.Alleles_around_cut_site_for_{sg_rna_name}.png"
+            ),
             bbox_inches="tight",
             pad_inches=1,
         )
@@ -1367,6 +1352,7 @@ def run_crispresso(args):
             sg_rna_sequences.append(current_guide_seq)
 
         offset_plots = np.array(offset_plots)
+        args.offset_plots = offset_plots
 
         if not cut_points:
             raise SgRNASequenceException(
@@ -2100,7 +2086,6 @@ def run_crispresso(args):
         compute_ref_positions
     )
 
-
     # END PLOTS
 
     # INITIALIZATIONS
@@ -2367,29 +2352,94 @@ def run_crispresso(args):
     plot1_indel_size(hlengths, hdensity, center_index, args)
 
     # Create plot 2
-    plot2()
+    plot2(
+        n_unmodified,
+        n_mixed_hdr_nhej,
+        n_modified,
+        n_repaired,
+        cut_points,
+        sg_rna_intervals,
+        pdf,
+        n_total,
+        args,
+    )
 
     # Create plot 3
-    plot3()
+    y_label_values = plot3(df_needle_alignment, n_total, pdf, args)
 
-    plot4a()
+    plot4a(
+        effect_vector_any,
+        sg_rna_intervals,
+        cut_points,
+        pdf,
+        n_total,
+        args,
+    )
 
-    plot4b()
+    plot4b(
+        effect_vector_insertion,
+        effect_vector_deletion,
+        effect_vector_mutation,
+        n_total,
+        n_modified,
+        cut_points,
+        sg_rna_intervals,
+        pdf,
+        args,
+    )
 
-    plot4c()
+    plot4c(
+        effect_vector_insertion_hdr,
+        effect_vector_deletion_hdr,
+        effect_vector_mutation_hdr,
+        n_total,
+        n_modified,
+        n_repaired,
+        cut_points,
+        sg_rna_intervals,
+        pdf,
+        args,
+    )
 
-    plot4d()
+    plot4d(
+        effect_vector_insertion_mixed,
+        effect_vector_deletion_mixed,
+        effect_vector_mutation_mixed,
+        n_mixed_hdr_nhej,
+        n_total,
+        y_label_values,
+        cut_points,
+        sg_rna_intervals,
+        pdf,
+        args,
+    )
 
-    plot4e()
+    plot4e(avg_vector_ins_all, avg_vector_del_all, cut_points, pdf, args)
 
     if perform_frameshift_analysis:
-        plot5()
+        plot5(
+            modified_frameshift,
+            modified_non_frameshift,
+            non_modified_non_frameshift,
+            cut_points,
+            exon_intervals,
+            pdf,
+            args,
+        )
 
-        plot6()
+        plot6(hist_frameshift, hist_inframe, pdf, args)
 
-        plot8()
+        plot8(splicing_sites_modified, df_needle_alignment, pdf, args)
 
-        plot7()
+        plot7(
+            effect_vector_insertion_noncoding,
+            effect_vector_deletion_noncoding,
+            effect_vector_mutation_noncoding,
+            cut_points,
+            sg_rna_intervals,
+            pdf,
+            args,
+        )
 
     # new plots alleles around cut_sites
     for sg_rna, cut_point in zip(sg_rna_sequences, cut_points):

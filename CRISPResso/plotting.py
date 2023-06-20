@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+import pylab as plt
+from matplotlib import font_manager as fm
 
 
 def plot1_indel_size(hlengths, hdensity, center_index, args):
@@ -48,7 +50,7 @@ def plot1_indel_size(hlengths, hdensity, center_index, args):
     fig1a.update_layout(legend_title="")
 
     filename_fig1a = "1a.Indel_size_distribution_n_sequences"
-    fig1a.write_image(_jp( f"{filename_fig1a}.pdf"))
+    fig1a.write_image(_jp(f"{filename_fig1a}.pdf"))
     fig1a.write_html(_jp(f"{filename_fig1a}.html"))
     if args.save_also_png:
         fig1a.write_image(_jp(f"{filename_fig1a}.png"))
@@ -87,13 +89,21 @@ def plot2(
     n_repaired,
     cut_points,
     sg_rna_intervals,
-    length_amplicon,
     pdf,
+    n_total,
     args,
 ):
     """Create plot 2"""
 
     # ###PIE CHARTS FOR HDR/NHEJ/MIXED/EVENTS###
+
+    length_amplicon = len(args.amplicon_seq)
+
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    log_filename = _jp("CRISPResso_RUNNING_LOG.txt")
 
     if args.expected_hdr_amplicon_seq:
         data = [
@@ -154,7 +164,7 @@ def plot2(
                     )
 
             ax2.plot(
-                cut_points + offset_plots,
+                cut_points + args.offset_plots,
                 np.zeros(len(cut_points)),
                 "vr",
                 ms=12,
@@ -199,6 +209,32 @@ def plot3(df_needle_alignment, n_total, pdf, args):
     # (3) a graph of frequency of deletions and
     # insertions of various sizes (deletions
     # could be consider as negative numbers and insertions as positive);
+
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    def calculate_range(df, column_name):
+        df_not_zero = df.loc[df[column_name] > 0, column_name]
+        try:
+            r = max(15, int(np.round(np.percentile(df_not_zero, 99))))
+        except Exception:
+            r = 15
+        return r
+
+    range_mut = calculate_range(df_needle_alignment, "n_mutated")
+    range_ins = calculate_range(df_needle_alignment, "n_inserted")
+    range_del = calculate_range(df_needle_alignment, "n_deleted")
+
+    y_values_mut, x_bins_mut = plt.histogram(
+        df_needle_alignment["n_mutated"], bins=range(0, range_mut)
+    )
+    y_values_ins, x_bins_ins = plt.histogram(
+        df_needle_alignment["n_inserted"], bins=range(0, range_ins)
+    )
+    y_values_del, x_bins_del = plt.histogram(
+        df_needle_alignment["n_deleted"], bins=range(0, range_del)
+    )
 
     fig = plt.figure(figsize=(26, 6.5))
 
@@ -300,24 +336,15 @@ def plot3(df_needle_alignment, n_total, pdf, args):
     pdf.savefig()  # saves the current figure into a pdf page
     plt.close()
 
-    return (
-        offset_plots,
-        y_values_mut,
-        x_bins_mut,
-        y_values_ins,
-        x_bins_ins,
-        y_values_del,
-        x_bins_del,
-    )
+    return y_label_values
 
 
 def plot4a(
-    offset_plots,
     effect_vector_any,
     sg_rna_intervals,
     cut_points,
-    length_amplicon,
     pdf,
+    n_total,
     args,
 ):
     """Create plot 4a"""
@@ -328,6 +355,14 @@ def plot4a(
     # insertion as modification of the flanking nucleotides);
 
     # Indels location Plots
+
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    length_amplicon = len(args.amplicon_seq)
 
     plt.figure(figsize=(10, 10))
 
@@ -427,11 +462,9 @@ def plot4a(
 
 
 def plot4b(
-    offset_plots,
     effect_vector_insertion,
     effect_vector_deletion,
     effect_vector_mutation,
-    length_amplicon,
     n_total,
     n_modified,
     cut_points,
@@ -440,6 +473,14 @@ def plot4b(
     args,
 ):
     """Plot 4b"""
+
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    length_amplicon = len(args.amplicon_seq)
 
     # NHEJ
     plt.figure(figsize=(10, 10))
@@ -549,11 +590,9 @@ def plot4b(
 
 
 def plot4c(
-    offset_plots,
     effect_vector_insertion_hdr,
     effect_vector_deletion_hdr,
     effect_vector_mutation_hdr,
-    LEN_AMPLICON,
     n_total,
     n_modified,
     n_repaired,
@@ -562,6 +601,14 @@ def plot4c(
     pdf,
     args,
 ):
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    LEN_AMPLICON = len(args.amplicon_seq)
+
     if args.expected_hdr_amplicon_seq:
         # HDR
         plt.figure(figsize=(10, 10))
@@ -676,17 +723,25 @@ def plot4c(
 
 
 def plot4d(
-    effect_vector_insertion,
-    effect_vector_deletion,
-    effect_vector_mutation,
-    LEN_AMPLICON,
+    effect_vector_insertion_mixed,
+    effect_vector_deletion_mixed,
+    effect_vector_mutation_mixed,
+    n_mixed_hdr_nhej,
     n_total,
-    n_modified,
+    y_label_values,
     cut_points,
     sg_rna_intervals,
     pdf,
     args,
 ):
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    LEN_AMPLICON = len(args.amplicon_seq)
+
     # MIXED
     plt.figure(figsize=(10, 10))
     plt.plot(effect_vector_insertion_mixed, "r", lw=3, label="Insertions")
@@ -799,17 +854,20 @@ def plot4d(
 
 
 def plot4e(
-    effect_vector_insertion,
-    effect_vector_deletion,
-    effect_vector_mutation,
-    LEN_AMPLICON,
-    n_total,
-    n_modified,
+    avg_vector_ins_all,
+    avg_vector_del_all,
     cut_points,
-    sg_rna_intervals,
     pdf,
     args,
 ):
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    length_amplicon = len(args.amplicon_seq)
+
     # Position dependent indels plot
     fig = plt.figure(figsize=(24, 10))
     ax1 = fig.add_subplot(1, 2, 1)
@@ -844,13 +902,15 @@ def plot4e(
 
     plt.xticks(
         np.arange(
-            0, LEN_AMPLICON, max(3, (LEN_AMPLICON // 6) - (LEN_AMPLICON // 6) % 5)
+            0,
+            length_amplicon,
+            max(3, (length_amplicon // 6) - (length_amplicon // 6) % 5),
         ).astype(int)
     )
     plt.xlabel("Reference amplicon position (bp)")
     plt.ylabel("Average insertion length")
     plt.ylim(0, max(1, y_max))
-    plt.xlim(xmax=LEN_AMPLICON - 1)
+    plt.xlim(xmax=length_amplicon - 1)
     ax1.set_title("Position dependent insertion size")
     plt.tight_layout()
 
@@ -882,14 +942,16 @@ def plot4e(
 
     plt.xticks(
         np.arange(
-            0, LEN_AMPLICON, max(3, (LEN_AMPLICON // 6) - (LEN_AMPLICON // 6) % 5)
+            0,
+            length_amplicon,
+            max(3, (length_amplicon // 6) - (length_amplicon // 6) % 5),
         ).astype(int)
     )
     plt.xlabel("Reference amplicon position (bp)")
     plt.ylabel("Average deletion length")
 
     plt.ylim(ymin=0, ymax=max(1, y_max))
-    plt.xlim(xmax=LEN_AMPLICON - 1)
+    plt.xlim(xmax=length_amplicon - 1)
     ax2.set_title("Position dependent deletion size")
 
     plt.tight_layout()
@@ -919,17 +981,22 @@ def plot4e(
 
 
 def plot5(
-    effect_vector_insertion,
-    effect_vector_deletion,
-    effect_vector_mutation,
-    LEN_AMPLICON,
-    n_total,
-    n_modified,
+    modified_frameshift,
+    modified_non_frameshift,
+    non_modified_non_frameshift,
     cut_points,
-    sg_rna_intervals,
+    exon_intervals,
     pdf,
     args,
 ):
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    length_amplicon = len(args.amplicon_seq)
+
     # make frameshift plots
     fig = plt.figure(figsize=(12 * 1.5, 14.5 * 1.5))
     ax1 = plt.subplot2grid((6, 3), (0, 0), colspan=3, rowspan=5)
@@ -954,7 +1021,7 @@ def plot5(
     )
 
     ax2 = plt.subplot2grid((6, 3), (5, 0), colspan=3, rowspan=1)
-    ax2.plot([0, LEN_AMPLICON], [0, 0], "-k", lw=2, label="Amplicon sequence")
+    ax2.plot([0, length_amplicon], [0, 0], "-k", lw=2, label="Amplicon sequence")
 
     for idx, exon_interval in enumerate(exon_intervals):
         if idx == 0:
@@ -994,7 +1061,7 @@ def plot5(
         borderaxespad=0.0,
         numpoints=1,
     )
-    plt.xlim(0, LEN_AMPLICON)
+    plt.xlim(0, length_amplicon)
     plt.axis("off")
 
     proptease = fm.FontProperties()
@@ -1017,7 +1084,11 @@ def plot5(
     plt.close()
 
 
-def plot6():
+def plot6(hist_frameshift, hist_inframe, pdf, args):
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
     # profiles--------------------------------------------
     fig = plt.figure(figsize=(22, 10))
     ax1 = fig.add_subplot(2, 1, 1)
@@ -1088,7 +1159,23 @@ def plot6():
     plt.close()
 
 
-def plot7():
+def plot7(
+    effect_vector_insertion_noncoding,
+    effect_vector_deletion_noncoding,
+    effect_vector_mutation_noncoding,
+    cut_points,
+    sg_rna_intervals,
+    pdf,
+    args,
+):
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    length_amplicon = len(args.amplicon_seq)
+
     # non coding
     plt.figure(figsize=(10, 10))
     plt.plot(effect_vector_insertion_noncoding, "r", lw=3, label="Insertions")
@@ -1159,15 +1246,15 @@ def plot7():
     plt.xticks(
         np.arange(
             0,
-            LEN_AMPLICON,
-            max(3, (LEN_AMPLICON // 6) - (LEN_AMPLICON // 6) % 5),
+            length_amplicon,
+            max(3, (length_amplicon // 6) - (length_amplicon // 6) % 5),
         ).astype(int)
     )
 
     plt.xlabel("Reference amplicon position (bp)")
     plt.ylabel("Sequences (no.)")
     plt.ylim(0, max(1, y_max))
-    plt.xlim(xmax=len(args.amplicon_seq) - 1)
+    plt.xlim(xmax=length_amplicon - 1)
     plt.title("Noncoding mutation position distribution")
     plt.savefig(
         _jp("7.Insertion_Deletion_Substitution_Locations_Noncoding.pdf"),
@@ -1185,7 +1272,15 @@ def plot7():
     plt.close()
 
 
-def plot8():
+def plot8(splicing_sites_modified, df_needle_alignment, pdf, args):
+    _jp = lambda filename: os.path.join(
+        args.output_directory, filename
+    )  # handy function to put a file in the output directory
+
+    offset_plots = args.offset_plots
+
+    length_amplicon = len(args.amplicon_seq)
+
     # ---------------------------------------------------
     fig = plt.figure(figsize=(12 * 1.5, 12 * 1.5))
     ax = fig.add_subplot(1, 1, 1)

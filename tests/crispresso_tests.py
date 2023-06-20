@@ -201,7 +201,7 @@ def test_run_crispresso(p, keep_intermediate):
 )
 def test1_run_crispresso(p, keep_intermediate):
     """Run end-to-end command
-    
+
     Ground truth values are from the original CRIPResso Docker
 
     CRISPResso --output_folder TEST1_OUTPUT_FOLDER \
@@ -270,3 +270,68 @@ def test1_run_crispresso(p, keep_intermediate):
     assert tuple(df_deletion["fq"].values[:4]) == (3359, 43, 3, 0)
     assert tuple(df_substitution["fq"].values[:4]) == (3149, 693, 105, 23)
     assert tuple(df_alleles["#Reads"].values[:4]) == (184, 68, 44, 26)
+
+
+@pytest.mark.parametrize(
+    "p,keep_intermediate",
+    [(1, False), (2, True)],
+)
+def test_run_crispresso_hdr(p, keep_intermediate):
+    """Run end-to-end command
+
+    Ground truth values are from the original CRIPResso Docker
+    CRISPResso --output_folder TEST_OUTPUT_FOLDER  \
+        -r1 test_data/hdr.fastq.gz \
+        --amplicon_seq acatttgcttctgacacaactgtgttcactagcaacctcaaacagacaccatggtgcatctgactcctgTggagaagtctgccgttactgccctgtggggcaaggtgaacgtggatgaagttggtggtgaggccctgggc \
+        --guide_seq TGCACCATGGTGTCTGTTTG
+    """
+
+    args = cr.parse_args(sys.argv[1:])
+    args.fastq_r1 = "test_data/hdr.fastq.gz"
+    args.amplicon_seq = (
+        "acatttgcttctgacacaactgtgttcactagcaacctcaaacag"
+        "acaccatggtgcatctgactcctgTggagaagtctgccgttactg"
+        "ccctgtggggcaaggtgaacgtggatgaagttggtggtgaggccct"
+        "gggcaggttggtatcaaggtta"
+    )
+    args.guide_seq = "TGCACCATGGTGTCTGTTTG"
+    args.n_promcesses = p
+    args.keep_intermediate = keep_intermediate
+    args.output_folder = f"PYTEST_RESULTS_FOLDER/pytest_p{p}"
+    args.trim_sequences = False
+    args.coding_seq = "tggtgcatctgactcctgTggagaagtctgccgttactg"
+
+    print(args)
+
+    (
+        n_total,
+        n_reads_input,
+        n_unmodified,
+        n_mixed_hdr_nhej,
+        n_modified,
+        n_repaired,
+        nhej_inserted,
+        nhej_deleted,
+        nhej_mutated,
+        df_indels,
+        df_insertion,
+        df_deletion,
+        df_substitution,
+        df_alleles,
+    ) = cr.run_crispresso(args)
+
+    assert n_total == 25000
+    assert n_reads_input == 25000
+    assert n_unmodified == 23853
+    assert n_mixed_hdr_nhej == 0
+    assert n_modified == 1147
+    assert n_repaired == 0
+    assert nhej_inserted == 120
+    assert nhej_deleted == 955
+    assert nhej_mutated == 79
+
+    assert tuple(df_indels["fq"].values[:4]) == (0, 0, 0, 0)
+    assert tuple(df_insertion["fq"].values[:4]) == (24880, 15, 61, 13)
+    assert tuple(df_deletion["fq"].values[:4]) == (24045, 0, 134, 8)
+    assert tuple(df_substitution["fq"].values[:4]) == (24921, 73, 6, 0)
+    assert tuple(df_alleles["#Reads"].values[:4]) == (18471, 1128, 546, 440)
